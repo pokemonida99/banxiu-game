@@ -110,6 +110,21 @@ header .sub { font-size: 12px; color: #8a7f6a; }
 .item-row .iname { font-size: 14px; color: #e8c96a; }
 .item-row .idesc { flex: 1; min-width: 200px; font-size: 12px; color: #b8ac94; line-height: 1.6; }
 .item-row.done { border-style: solid; border-color: #2c2620; opacity: .75; }
+#rom-overlay { position: fixed; inset: 0; background: #140a10; display: none; z-index: 85; overflow-y: auto; }
+#rom-box { max-width: 760px; margin: 24px auto; padding: 16px 20px; background: #1c1218; border: 2px solid #e08aad; border-radius: 12px; }
+#rom-full { display: block; max-height: 62vh; max-width: 100%; margin: 0 auto 12px; border-radius: 10px; border: 1px solid #4a2838; }
+#rom-hud { display: flex; align-items: center; gap: 12px; background: #241620; border: 1px solid #4a2838; border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; }
+#rom-hud img { width: 64px; height: 64px; border-radius: 50%; border: 2px solid #e08aad; object-fit: cover; }
+#rom-hname { font-size: 15px; color: #f0d8e4; }
+.rom-favwrap { height: 10px; background: #0e0509; border-radius: 5px; overflow: hidden; margin-top: 5px; }
+#rom-favbar { height: 100%; width: 0%; background: #d4537e; transition: width .3s; }
+#rom-textbox { display: flex; gap: 12px; align-items: flex-start; background: #241620; border: 1px solid #4a2838; border-radius: 10px; padding: 12px 16px; margin-bottom: 12px; }
+#rom-textbox img { width: 60px; height: 60px; border-radius: 50%; border: 2px solid #e08aad; object-fit: cover; flex-shrink: 0; }
+#rom-who { font-size: 13px; color: #e8a8c4; margin-bottom: 4px; }
+#rom-text { font-size: 15px; line-height: 1.9; color: #f0e6ec; white-space: pre-line; }
+#rom-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+#rom-actions .gbtn { flex: 1; min-width: 140px; }
+.heart-badge { color: #e08aad; }
 </style>
 </head>
 <body>
@@ -280,8 +295,36 @@ header .sub { font-size: 12px; color: #8a7f6a; }
   </div>
 </div>
 
+<div id="rom-overlay">
+  <div id="rom-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <h2 id="rom-title" style="font-size:17px; color:#e08aad; letter-spacing:2px;">—</h2>
+      <button class="hbtn" id="rom-close">關閉</button>
+    </div>
+    <img id="rom-full" src="" alt="" style="display:none;">
+    <div id="rom-hud" style="display:none;">
+      <img id="rom-face" src="" alt="">
+      <div style="flex:1;">
+        <div id="rom-hname">—</div>
+        <div id="rom-htitle" style="font-size:12px; color:#8a7f6a;">—</div>
+        <div class="rom-favwrap"><div id="rom-favbar"></div></div>
+        <div id="rom-favval" style="font-size:11px; color:#b08; text-align:right;">—</div>
+      </div>
+    </div>
+    <div id="rom-textbox">
+      <img id="rom-avatar" src="" alt="">
+      <div style="flex:1;">
+        <div id="rom-who">—</div>
+        <div id="rom-text">—</div>
+      </div>
+    </div>
+    <div id="rom-actions"></div>
+  </div>
+</div>
+
 <script src="story.js"></script>
 <script src="dungeons.js"></script>
+<script src="romance.js"></script>
 <script>
 "use strict";
 var REGEN_SEC = 5, DEMO = true;
@@ -334,8 +377,15 @@ var LOCS = {
   "會議室":{ bg:"img/bg/meeting.jpg", desc:"吞噬修為的結界，小燕在此坐鎮", npcs:["xiaoyan"] },
   "餐廳":  { bg:"img/bg/restaurant.jpg", desc:"「四季的味」，中午的渡劫窗口", npcs:["saika"] },
   "茶水間":{ bg:"img/bg/pantry.jpg", desc:"靈氣（咖啡因）補給站", npcs:["komi"] },
-  "頂樓":  { bg:"img/bg/rooftop.jpg", desc:"風很涼，天很藍，沒有主管", npcs:["ajie"] }
+  "頂樓":  { bg:"img/bg/rooftop.jpg", desc:"風很涼，天很藍，沒有主管", npcs:["ajie"] },
+  "女僕店":{ bg:"img/bg/maidcafe.jpg", desc:"巷子裡的貓耳咖啡廳（公司外）", npcs:[], outside:true },
+  "診所":  { bg:"img/bg/clinic.jpg", desc:"巷口的牙醫診所，社畜的胃在此得救（公司外）", npcs:[], outside:true },
+  "選物店":{ bg:"img/bg/boutique.jpg", desc:"質感選物店，要價不斐（公司外）", npcs:[], outside:true }
 };
+/* 感情線女角出沒地點 */
+var ROM_LOC = { "女僕店":["alin"], "診所":["fei"], "選物店":["jixu"], "頂樓":["liang"], "工位":["liang"], "茶水間":["komi"] };
+function favTier(f){ return f>=100?"high":(f>=40?"mid":"low"); }
+function romName(id){ return (window.ROMANCE && ROMANCE.HEROINES[id]) ? ROMANCE.HEROINES[id].name : id; }
 
 var QUESTS = [
   {id:"test", text:"完成水見式入職測驗", reward:50},
@@ -355,7 +405,11 @@ function freshState(){
            chat:{}, files:{}, help:null, helpDone:{}, story:0, lastLoginDay:"",
            gear:{}, equip:{tie:null,kb:null,chair:null,mug:null}, shards:0, pulls:0,
            rechargeCount:0, lastRechargeDay:"", shopChatG:0, shopChatN:0, storyDone:{},
-           items:{}, dungeonClear:{} };
+           items:{}, dungeonClear:{}, rel:{}, eventsSeen:{} };
+}
+function relOf(id){
+  if(!s.rel[id]) s.rel[id]={ met:false, fav:0, stage:0, dating:false, brokeUp:false, deep:{}, late:{}, banter:0 };
+  return s.rel[id];
 }
 function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(s)); }catch(e){} }
 function load(){ try{ var d=localStorage.getItem(SAVE_KEY); return d?JSON.parse(d):null; }catch(e){ return null; } }
@@ -747,6 +801,17 @@ function render(){
     d.onclick=function(){ talkTo(id); };
     nr.appendChild(d);
   });
+  if(window.ROMANCE && ROM_LOC[s.loc]){
+    ROM_LOC[s.loc].forEach(function(id){
+      var H=ROMANCE.HEROINES[id], r=relOf(id);
+      var img = r.met ? H.faces[favTier(r.fav)] : H.faces.low;
+      var tag = r.dating ? "♥"+H.name : (id==="komi" ? H.name+"（心動）" : H.name);
+      var d=document.createElement("div"); d.className="npc";
+      d.innerHTML='<img src="'+img+'" alt="'+H.name+'" style="border-color:'+(r.dating?"#e08aad":"#c9a54e")+'"><span'+(r.dating?' style="color:#f0b8d0"':'')+'>'+tag+"</span>";
+      d.onclick=function(){ interactHeroine(id); };
+      nr.appendChild(d);
+    });
+  }
   var pa=document.getElementById("p-avatar"), paUrl=playerAvatar();
   if(pa.src!==paUrl) pa.src=paUrl;
   document.getElementById("p-name").textContent=s.name||"（未命名）";
@@ -775,13 +840,19 @@ function render(){
     mr.appendChild(b);
   });
   var ar=document.getElementById("act-row"); ar.innerHTML="";
-  ACTIONS[s.loc].forEach(function(a){
+  (ACTIONS[s.loc]||[]).forEach(function(a){
     var b=document.createElement("button"); b.className="gbtn";
     b.textContent=a.label();
     b.disabled=!s.introDone;
     b.onclick=function(){ regen(); a.run(); render(); save(); };
     ar.appendChild(b);
   });
+  if(LOCS[s.loc] && LOCS[s.loc].outside && (!ACTIONS[s.loc])){
+    var hint=document.createElement("span");
+    hint.style.cssText="font-size:12px; color:#8a7f6a; align-self:center;";
+    hint.textContent="（這裡是公司外。點上方的人物互動。）";
+    ar.appendChild(hint);
+  }
   if(s.school==="外包系" && s.loc!=="工位"){
     var b=document.createElement("button"); b.className="gbtn";
     b.textContent="遠端上班（體力 15）";
@@ -1326,6 +1397,237 @@ document.getElementById("dg-retreat").addEventListener("click", function(){
   if(confirm("確定撤退嗎？副本進度不保留，但道具不會消耗。")) exitDungeon();
 });
 
+/* ---------- 感情線引擎 ---------- */
+var romQ=[], romCb=null, romCur=null, romHeroine=null;
+function romSpeaker(who){
+  if(who==="player") return { name:(s.name||"你"), img:playerAvatar() };
+  if(who==="narrate") return { name:"", img:null };
+  var H = window.ROMANCE && ROMANCE.HEROINES[who];
+  if(H){ var r=relOf(who); return { name:H.name, img:H.faces[favTier(r.fav)] }; }
+  if(CHARS[who]) return { name:CHARS[who].name, img:CHARS[who].img };
+  var side={ alin_sister:"小雪", old_man:"老先生", komi_recording:"小米（錄音）" };
+  var himg = who==="alin_sister"?"img/avatar/alin_0.jpg":(who==="komi_recording"?"img/avatar/komi_2.jpg":playerAvatar());
+  return { name:side[who]||"？", img:himg };
+}
+function romActions(btns){
+  var box=document.getElementById("rom-actions"); box.innerHTML="";
+  btns.forEach(function(b){ var el=document.createElement("button"); el.className="gbtn"; el.textContent=b[0]; el.onclick=b[1]; box.appendChild(el); });
+}
+function romShow(who, text){
+  var sp=romSpeaker(who);
+  var box=document.getElementById("rom-textbox");
+  var av=document.getElementById("rom-avatar");
+  if(who==="narrate"){ av.style.display="none"; document.getElementById("rom-who").textContent=""; }
+  else { av.style.display="block"; av.src=sp.img; document.getElementById("rom-who").textContent=sp.name; }
+  document.getElementById("rom-text").textContent=fmt(text);
+}
+function romSay(seq, cb){
+  romQ=seq.slice(); romCb=cb||null;
+  document.getElementById("rom-overlay").style.display="block";
+  romNext();
+}
+function romNext(){
+  if(!romQ.length){ var c=romCb; romCb=null; if(c) c(); else romCloseToPanel(); return; }
+  romCur=romQ.shift();
+  romShow(romCur[0], romCur[1]);
+  romActions([[romQ.length?"繼續 ▼":"▼", romNext]]);
+}
+function romFull(id, cb){
+  var H=ROMANCE.HEROINES[id];
+  var f=document.getElementById("rom-full");
+  if(H.full){ f.src=H.full; f.style.display="block"; } else f.style.display="none";
+  document.getElementById("rom-title").textContent="◆ "+H.name+"・"+H.title;
+  document.getElementById("rom-hud").style.display="none";
+  document.getElementById("rom-overlay").style.display="block";
+  romSay(H.intro.map(function(l){ return [l[0], l[1]]; }), function(){
+    f.style.display="none";
+    if(cb) cb();
+  });
+}
+function meetHeroine(id){
+  var r=relOf(id); r.met=true; save();
+  log("【感情線】你認識了"+romName(id)+"。之後可以在對應地點互動、累積好感度。");
+  romFull(id, function(){ openRomance(id); });
+}
+function addFav(id, n){
+  var r=relOf(id); r.fav+=n;
+  // 階段對話推進
+  var H=ROMANCE.HEROINES[id];
+  var pending=null;
+  for(var i=r.stage;i<H.stages.length;i++){
+    if(r.fav>=H.stages[i].need){ pending=H.stages[i]; r.stage=i+1; } else break;
+  }
+  return pending;
+}
+function romCloseToPanel(){
+  document.getElementById("rom-full").style.display="none";
+  if(romHeroine) openRomance(romHeroine); else document.getElementById("rom-overlay").style.display="none";
+}
+function checkTwoTiming(){
+  var dating=Object.keys(s.rel).filter(function(k){ return s.rel[k].dating; });
+  if(dating.length>=2 && Math.random()<0.5){
+    var seq=ROMANCE.TWO_TIMING.map(function(l){ return [l[0], l[1]]; });
+    romHeroine=null;
+    romSay(seq, function(){
+      s.qi=0;
+      dating.forEach(function(k){ s.rel[k].dating=false; s.rel[k].brokeUp=true; });
+      s.demon=Math.min(100, s.demon+30);
+      save();
+      document.getElementById("rom-overlay").style.display="none";
+      render();
+    });
+    return true;
+  }
+  return false;
+}
+function doDate(id, d){
+  var r=relOf(id);
+  if(d.cost>0 && s.stones<d.cost){ romSay([["narrate","（靈石不足，這次的約會只好作罷。）"]]); return; }
+  if(d.cost>0) s.stones-=d.cost;
+  var pending=addFav(id, d.fav);
+  save();
+  var seq=d.lines.map(function(l){ return [l[0], l[1]]; });
+  seq.push(["narrate","（好感度 +"+d.fav+"。目前好感度 "+r.fav+"。）"]);
+  if(pending) pending.lines.forEach(function(l){ seq.push([l[0], l[1]]); });
+  if(!r.dating && !pending && r.fav>=30 && window.ROMANCE.COURTSHIP && ROMANCE.COURTSHIP[id] && Math.random()<0.35){
+    pickLine(ROMANCE.COURTSHIP[id]).forEach(function(l){ seq.push([l[0], l[1]]); });
+  }
+  romSay(seq, function(){
+    if(r.dating && checkTwoTiming()) return;
+    romCloseToPanel();
+  });
+}
+function doConfess(id){
+  var H=ROMANCE.HEROINES[id], r=relOf(id);
+  var seq=H.confess.lines.map(function(l){ return [l[0], l[1]]; });
+  romSay(seq, function(){
+    romActions([
+      ["答應交往 ♥", function(){ r.dating=true; save(); romSay([[ "narrate","（你答應了。）"], H.confess.accept], function(){ log("【感情線】你和"+H.name+"交往了！"); romCloseToPanel(); }); }],
+      ["婉拒", function(){ romSay([H.confess.reject, ["narrate","（你婉拒了。好感度不會消失，但告白的時機，也許不會再有第二次。）"]], romCloseToPanel); }]
+    ]);
+  });
+}
+function doBreakup(id){
+  var H=ROMANCE.HEROINES[id], r=relOf(id);
+  romSay(H.breakup.lines.map(function(l){ return [l[0], l[1]]; }), function(){
+    r.dating=false; r.brokeUp=true; save();
+    log("【感情線】你和"+H.name+"分手了。這段關係無法再重來。");
+    romCloseToPanel();
+  });
+}
+function romChapters(id){
+  var r=relOf(id), out=[];
+  ["DEEP","DEEP_LATE"].forEach(function(key){
+    var arr = window.ROMANCE && ROMANCE[key] && ROMANCE[key][id];
+    if(!arr) return;
+    var seenMap = key==="DEEP"?r.deep:r.late;
+    arr.forEach(function(ch, i){
+      var unlocked = r.fav>=ch.need && (!ch.need2 || r.dating);
+      out.push({ key:key, i:i, ch:ch, unlocked:unlocked, seen:!!seenMap[i] });
+    });
+  });
+  return out;
+}
+function playChapter(id, key, i){
+  var r=relOf(id), ch=ROMANCE[key][id][i];
+  (key==="DEEP"?r.deep:r.late)[i]=true; save();
+  romSay(ch.lines.map(function(l){ return [l[0], l[1]]; }), romCloseToPanel);
+}
+function openRomance(id){
+  romHeroine=id;
+  var H=ROMANCE.HEROINES[id], r=relOf(id);
+  document.getElementById("rom-full").style.display="none";
+  document.getElementById("rom-title").textContent="◆ "+H.name;
+  document.getElementById("rom-hud").style.display="flex";
+  document.getElementById("rom-face").src=H.faces[favTier(r.fav)];
+  document.getElementById("rom-hname").textContent=H.name+(r.dating?"　♥ 交往中":(r.brokeUp?"　（已分手）":""));
+  document.getElementById("rom-htitle").textContent=H.title;
+  document.getElementById("rom-favbar").style.width=Math.min(100, r.fav/200*100)+"%";
+  document.getElementById("rom-favval").textContent="好感度 "+r.fav+(r.fav>=H.confess.trigger&&!r.dating&&!r.brokeUp?"（可告白）":"");
+  romShow("narrate", r.dating
+      ? pickLine(ROMANCE.BANTER[id])
+      : (r.brokeUp ? "（她對你露出禮貌而疏遠的微笑。有些人一旦錯過，就真的錯過了。）" : "（"+H.name+"就在你面前。要做點什麼呢？）"));
+  var ATKEY={ maidcafe:"女僕店", clinic:"診所", boutique:"選物店", office:"工位", rooftop:"頂樓", pantry:"茶水間" };
+  var acts=[];
+  if(!r.brokeUp){
+    H.dates.forEach(function(d){ if(ATKEY[d.at]===s.loc || r.dating) acts.push([d.label, function(){ doDate(id, d); }]); });
+    var chs=romChapters(id);
+    var nextCh=null;
+    chs.forEach(function(c){ if(c.unlocked && !c.seen && !nextCh) nextCh=c; });
+    if(nextCh) acts.push(["★ 深入了解："+nextCh.ch.title, function(){ playChapter(id, nextCh.key, nextCh.i); }]);
+    else {
+      var reCh=chs.filter(function(c){ return c.unlocked && c.seen; });
+      if(reCh.length) acts.push(["回味回憶（"+reCh.length+" 章）", function(){ openChaptersList(id); }]);
+    }
+    if(r.fav>=H.confess.trigger && !r.dating) acts.push(["♥ 告白", function(){ doConfess(id); }]);
+    if(r.dating && window.ROMANCE.OUTINGS && ROMANCE.OUTINGS[id]){
+      acts.push(["♥ 約會外出", function(){
+        var sc=pickLine(ROMANCE.OUTINGS[id]);
+        addFav(id, 6); save();
+        romSay(sc.map(function(l){ return [l[0], l[1]]; }), romCloseToPanel);
+      }]);
+    }
+    if(r.dating) acts.push(["提出分手", function(){ if(confirm("確定要跟"+H.name+"分手嗎？之後無法再追求。")) doBreakup(id); }]);
+  } else {
+    var reCh2=romChapters(id).filter(function(c){ return c.unlocked && c.seen; });
+    if(reCh2.length) acts.push(["回味回憶（"+reCh2.length+" 章）", function(){ openChaptersList(id); }]);
+  }
+  acts.push(["離開", function(){ document.getElementById("rom-overlay").style.display="none"; render(); }]);
+  romActions(acts);
+}
+function openChaptersList(id){
+  var chs=romChapters(id).filter(function(c){ return c.unlocked && c.seen; });
+  romShow("narrate", "（回味你和"+romName(id)+"的回憶。）");
+  var acts=chs.map(function(c){ return ["【"+(c.key==="DEEP"?"":"後")+"】"+c.ch.title, function(){ playChapter(id, c.key, c.i); }]; });
+  acts.push(["返回", function(){ openRomance(id); }]);
+  romActions(acts);
+}
+function interactHeroine(id){
+  var r=relOf(id);
+  if(!r.met){
+    if(s.lv>=ROMANCE.HEROINES[id].meetLv){ meetHeroine(id); }
+    else {
+      // NPC 模式：只顯示 npc 台詞
+      romHeroine=null;
+      document.getElementById("rom-full").style.display="none";
+      document.getElementById("rom-hud").style.display="none";
+      document.getElementById("rom-title").textContent="◆ "+ROMANCE.HEROINES[id].title;
+      document.getElementById("rom-overlay").style.display="block";
+      romSay([["narrate", pickLine(ROMANCE.HEROINES[id].npc)],
+              ["narrate","（Lv "+ROMANCE.HEROINES[id].meetLv+" 之前，你對她還沒有特別的印象。等你再成長一些，也許會有不一樣的相遇。）"]],
+             function(){ document.getElementById("rom-overlay").style.display="none"; });
+    }
+    return;
+  }
+  openRomance(id);
+}
+document.getElementById("rom-close").addEventListener("click", function(){ document.getElementById("rom-overlay").style.display="none"; render(); });
+/* 隨機吃醋／八卦事件 */
+function checkRomEvent(){
+  if(!s.introDone || !window.ROMANCE) return;
+  if(document.getElementById("dlg-overlay").style.display==="block") return;
+  if(document.getElementById("rom-overlay").style.display==="block") return;
+  var datingList=Object.keys(s.rel).filter(function(k){ return s.rel[k].dating; });
+  var anyMet=Object.keys(s.rel).some(function(k){ return s.rel[k].met; });
+  if(Math.random()>=0.06) return;
+  var pool=ROMANCE.EVENTS.filter(function(e){
+    if(s.eventsSeen[e.id]) return false;
+    if(e.need.any) return anyMet;
+    if(e.need.dating) return datingList.indexOf(e.need.dating)>=0;
+    return false;
+  });
+  if(!pool.length) return;
+  var e=pool[Math.floor(Math.random()*pool.length)];
+  s.eventsSeen[e.id]=true; save();
+  romHeroine=null;
+  document.getElementById("rom-full").style.display="none";
+  document.getElementById("rom-hud").style.display="none";
+  document.getElementById("rom-title").textContent="◆ 插曲";
+  document.getElementById("rom-overlay").style.display="block";
+  romSay(e.lines.map(function(l){ return [l[0], l[1]]; }), function(){ document.getElementById("rom-overlay").style.display="none"; });
+}
+
+
 document.getElementById("btn-roster").addEventListener("click", openRoster);
 document.getElementById("roster-close").addEventListener("click", function(){ document.getElementById("roster-overlay").style.display="none"; });
 document.getElementById("roster-overlay").addEventListener("click", function(e){ if(e.target===this) this.style.display="none"; });
@@ -1342,7 +1644,7 @@ function runCmd(txt){
   }
   if(txt==="上班" && s.school==="外包系"){ work(false); render(); save(); return; }
   var found=null;
-  ACTIONS[s.loc].forEach(function(a){ if(a.cmd===txt) found=a; });
+  (ACTIONS[s.loc]||[]).forEach(function(a){ if(a.cmd===txt) found=a; });
   if(found){ found.run(); }
   else {
     var el=null;
@@ -1364,6 +1666,7 @@ function tutorialSeq(){
     {who:"saika", text:"行動也會累積「經驗」，經驗滿了自動升級——體力上限和薪資都會變高，還會解鎖特殊能力，例如「一頁式簡報術」能讓開會省一半體力。"},
     {who:"saika", text:"還有，阿慶主管每三小時會發一次「派工任務」，逾期會被怪物集團的稽核記心魔……上班就是這樣，你懂的。"},
     {who:"saika", text:"賺到的靈石可以到右上角「福利社」花掉——抽裝備轉蛋、每日免費儲值（真的不用錢）。抽到的領帶、鍵盤在「裝備」介面穿上還能強化，+9 領帶是本公司的浪漫。"},
+    {who:"saika", text:"還有喔～下班別急著回家。巷子裡有女僕店、診所、選物店，公司內外也有幾位……有趣的人。等你 Lv 4 之後，也許會有些心動的相遇。（她眨眼）不過腳踏兩條船的話，修為會歸零喔——這種傷，本店可清不乾淨。"},
     {who:"saika", text:"也可以直接在下面的指令框打字，例如「去餐廳」「吃飯」。想換識別證上的大頭照，點自己的頭像就行。就這樣，有問題到餐廳找我！"}
   ];
 }
@@ -1450,6 +1753,7 @@ document.getElementById("btn-reset").addEventListener("click", function(){
         if(Object.keys(s.items).length) log("【獲得道具】掌門們留了幾樣東西給你——到「裝備與道具」看看吧。");
       }
     }
+    if(s.rel===undefined){ s.rel={}; s.eventsSeen={}; }
     var before=s.sta;
     regen();
     render();
@@ -1460,7 +1764,7 @@ document.getElementById("btn-reset").addEventListener("click", function(){
     render();
     startIntro();
   }
-  setInterval(function(){ regen(); checkTask(); checkStory(); render(); }, 1000);
+  setInterval(function(){ regen(); checkTask(); checkStory(); checkRomEvent(); render(); }, 1000);
 })();
 </script>
 </body>
