@@ -1,0 +1,1467 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>上班修仙傳</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #141210; color: #e8e0d0; font-family: "Microsoft JhengHei", "PingFang TC", sans-serif; min-height: 100vh; padding: 16px 8px; }
+#app { max-width: 880px; margin: 0 auto; position: relative; }
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+header h1 { font-size: 22px; color: #c9a54e; letter-spacing: 4px; }
+header .sub { font-size: 12px; color: #8a7f6a; }
+.hbtn { background: none; border: 1px solid #3a332a; color: #b8ac94; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; margin-left: 6px; }
+.hbtn:hover { border-color: #c9a54e; color: #c9a54e; }
+#scene { position: relative; height: 230px; border-radius: 10px; overflow: hidden; border: 1px solid #3a332a; background-size: cover; background-position: center; margin-bottom: 10px; }
+#scene .shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,8,5,.35), rgba(10,8,5,.75)); }
+#loc-name { position: absolute; top: 10px; left: 12px; font-size: 18px; color: #f5ead0; text-shadow: 0 1px 4px #000; letter-spacing: 2px; }
+#loc-desc { position: absolute; top: 38px; left: 13px; font-size: 12px; color: #cfc3a8; text-shadow: 0 1px 3px #000; }
+#npc-row { position: absolute; bottom: 10px; left: 0; right: 0; display: flex; justify-content: center; gap: 22px; }
+.npc { text-align: center; cursor: pointer; }
+.npc img { width: 62px; height: 62px; border-radius: 50%; border: 2px solid #c9a54e; object-fit: cover; display: block; margin: 0 auto; transition: transform .15s; }
+.npc:hover img { transform: scale(1.1); }
+.npc span { display: inline-block; margin-top: 4px; font-size: 12px; background: rgba(0,0,0,.6); padding: 1px 8px; border-radius: 8px; color: #f0e6cc; }
+#hud { background: #1f1b16; border: 1px solid #3a332a; border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; }
+#hud-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+#hud-top img { width: 42px; height: 42px; border-radius: 50%; border: 2px solid #c9a54e; object-fit: cover; cursor: pointer; }
+#hud-top img:hover { box-shadow: 0 0 8px rgba(201,165,78,.7); }
+#p-name { font-size: 16px; color: #f5ead0; }
+.badge { font-size: 12px; padding: 3px 10px; border-radius: 10px; background: #2c2620; border: 1px solid #4a4234; color: #d8c9a3; }
+#stones-badge { color: #e8c96a; }
+.barrow { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 12px; }
+.barrow .lbl { width: 118px; color: #a89b80; }
+.barwrap { flex: 1; height: 10px; background: #0e0c09; border-radius: 5px; overflow: hidden; }
+.bar { height: 100%; width: 0%; transition: width .3s; }
+#sta-bar { background: #d9a13c; } #qi-bar { background: #5fae7f; } #demon-bar { background: #b0517a; } #xp-bar { background: #6f86b5; }
+#task-box { border: 1px dashed #4a4234; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; color: #d8c9a3; font-size: 13px; }
+#task-box.urgent { border-color: #b0517a; color: #e0a0bb; }
+#skill-list li { list-style: none; padding: 2px 0; color: #d8c9a3; }
+#skill-list li.locked { color: #5f584a; }
+.barrow .val { width: 74px; text-align: right; color: #cfc3a8; }
+#controls { background: #1f1b16; border: 1px solid #3a332a; border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; }
+#controls p.cap { font-size: 12px; color: #8a7f6a; margin: 0 0 6px; }
+.btnrow { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.gbtn { background: #2c2620; border: 1px solid #4a4234; color: #e8e0d0; padding: 7px 14px; border-radius: 7px; cursor: pointer; font-size: 14px; }
+.gbtn:hover { border-color: #c9a54e; }
+.gbtn:disabled { opacity: .4; cursor: default; }
+.gbtn.here { background: #3d3423; border-color: #c9a54e; color: #e8c96a; }
+#cmd-row { display: flex; gap: 8px; }
+#cmd-input { flex: 1; background: #0e0c09; border: 1px solid #4a4234; border-radius: 7px; color: #e8e0d0; padding: 8px 12px; font-size: 14px; }
+#quests { background: #1f1b16; border: 1px solid #3a332a; border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; font-size: 13px; }
+#quests h3 { font-size: 13px; color: #c9a54e; margin-bottom: 6px; }
+#quests li { list-style: none; padding: 2px 0; color: #b8ac94; }
+#quests li.done { color: #6f9a58; text-decoration: line-through; }
+#log { background: #17140f; border: 1px solid #2c2620; border-radius: 10px; padding: 10px 14px; font-size: 13px; color: #b8ac94; line-height: 1.8; min-height: 70px; }
+#dlg-overlay { position: fixed; inset: 0; background: rgba(5,4,2,.55); display: none; z-index: 50; }
+#dlg-box { position: fixed; left: 50%; transform: translateX(-50%); bottom: 28px; width: min(840px, 94vw); background: #201b13; border: 2px solid #c9a54e; border-radius: 12px; padding: 14px 18px; display: flex; gap: 14px; align-items: flex-start; box-shadow: 0 6px 30px rgba(0,0,0,.6); }
+#dlg-box img { width: 76px; height: 76px; border-radius: 50%; border: 2px solid #c9a54e; object-fit: cover; flex-shrink: 0; }
+#dlg-name { font-size: 14px; color: #e8c96a; margin-bottom: 4px; }
+#dlg-title { font-size: 11px; color: #8a7f6a; margin-left: 6px; }
+#dlg-text { font-size: 15px; line-height: 1.8; color: #f0e6cc; white-space: pre-line; }
+#dlg-hint { font-size: 11px; color: #8a7f6a; margin-top: 8px; }
+#dlg-input-row { display: none; margin-top: 10px; gap: 8px; }
+#dlg-input { background: #0e0c09; border: 1px solid #4a4234; border-radius: 7px; color: #e8e0d0; padding: 7px 12px; font-size: 15px; width: 180px; }
+#roster-overlay { position: fixed; inset: 0; background: rgba(5,4,2,.7); display: none; z-index: 60; }
+#roster-box { position: fixed; left: 50%; top: 50%; transform: translate(-50%,-50%); width: min(860px, 94vw); max-height: 86vh; overflow-y: auto; background: #1f1b16; border: 2px solid #c9a54e; border-radius: 12px; padding: 16px 20px; }
+#roster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.rcard { background: #17140f; border: 1px solid #3a332a; border-radius: 10px; padding: 10px; text-align: center; cursor: pointer; }
+.rcard:hover { border-color: #c9a54e; }
+.rcard img { width: 64px; height: 64px; border-radius: 50%; border: 2px solid #c9a54e; object-fit: cover; }
+.rcard.unknown img { filter: brightness(0); border-color: #3a332a; }
+.rcard .rname { font-size: 14px; color: #f0e6cc; margin-top: 6px; }
+.rcard .rtitle { font-size: 11px; color: #8a7f6a; }
+.rcard.unknown .rname, .rcard.unknown .rtitle { color: #5f584a; }
+#roster-detail { border-top: 1px solid #3a332a; padding-top: 12px; font-size: 14px; line-height: 1.8; color: #d8c9a3; display: none; }
+#roster-detail .fpage { background: #17140f; border: 1px solid #2c2620; border-radius: 8px; padding: 8px 12px; margin-top: 8px; font-size: 13px; }
+#roster-detail .fpage.locked { color: #5f584a; }
+.quitwrap { height: 10px; background: #0e0c09; border-radius: 5px; overflow: hidden; }
+.quitbar { height: 100%; background: #b0517a; }
+#shop-overlay, #gear-overlay { position: fixed; inset: 0; background: rgba(5,4,2,.7); display: none; z-index: 60; }
+#shop-box, #gear-box { position: fixed; left: 50%; top: 50%; transform: translate(-50%,-50%); width: min(760px, 94vw); max-height: 86vh; overflow-y: auto; background: #1f1b16; border: 2px solid #c9a54e; border-radius: 12px; padding: 16px 20px; }
+.shop-sec { background: #17140f; border: 1px solid #2c2620; border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
+.shop-sec h3 { font-size: 14px; color: #c9a54e; margin-bottom: 6px; }
+.shop-sec p { font-size: 13px; color: #b8ac94; margin: 0 0 8px; line-height: 1.7; }
+.shop-sec .tiny { font-size: 10px; color: #5f584a; margin-top: 6px; }
+.gear-row { display: flex; align-items: center; gap: 10px; background: #17140f; border: 1px solid #2c2620; border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; flex-wrap: wrap; }
+.gear-row .gname { flex: 1; min-width: 180px; font-size: 14px; color: #f0e6cc; }
+.gear-row .gstat { font-size: 12px; color: #b8ac94; min-width: 120px; }
+.rar-badge { font-size: 11px; padding: 1px 8px; border-radius: 8px; font-weight: bold; }
+.gear-row.equipped { border-color: #c9a54e; }
+.slot-sum { display: inline-block; background: #17140f; border: 1px solid #2c2620; border-radius: 8px; padding: 6px 12px; margin: 0 6px 8px 0; font-size: 12px; color: #d8c9a3; }
+#dungeon-overlay { position: fixed; inset: 0; background: #0d0b08; display: none; z-index: 80; overflow-y: auto; }
+#dg-box { max-width: 760px; margin: 24px auto; padding: 16px 20px; background: #1a1610; border: 2px solid #c9a54e; border-radius: 12px; }
+#dg-battle-panel { display: none; margin-bottom: 12px; }
+.dg-unit { display: flex; align-items: center; gap: 12px; background: #17140f; border: 1px solid #3a332a; border-radius: 10px; padding: 10px 14px; }
+.dg-unit img { width: 56px; height: 56px; border-radius: 50%; border: 2px solid #c9a54e; object-fit: cover; }
+.dg-uname { font-size: 14px; color: #f0e6cc; margin-bottom: 4px; }
+.dg-hpwrap { height: 12px; background: #0e0c09; border-radius: 6px; overflow: hidden; }
+.dg-hp { height: 100%; width: 100%; transition: width .25s; }
+.dg-hpval { font-size: 11px; color: #8a7f6a; margin-top: 2px; text-align: right; }
+.dg-vs { text-align: center; color: #c9a54e; font-size: 13px; letter-spacing: 4px; margin: 6px 0; }
+#dg-blog { font-size: 13px; color: #b8ac94; line-height: 1.8; background: #14110c; border: 1px solid #2c2620; border-radius: 8px; padding: 8px 12px; margin-top: 8px; min-height: 52px; }
+#dg-text-box { display: flex; gap: 12px; align-items: flex-start; background: #201b13; border: 1px solid #4a4234; border-radius: 10px; padding: 12px 16px; margin-bottom: 12px; }
+#dg-text-box img { width: 60px; height: 60px; border-radius: 50%; border: 2px solid #c9a54e; object-fit: cover; flex-shrink: 0; }
+#dg-who { font-size: 13px; color: #e8c96a; margin-bottom: 4px; }
+#dg-text { font-size: 15px; line-height: 1.9; color: #f0e6cc; white-space: pre-line; }
+#dg-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+#dg-actions .gbtn { flex: 1; min-width: 140px; }
+.item-row { display: flex; align-items: center; gap: 10px; background: #201b13; border: 1px dashed #c9a54e; border-radius: 8px; padding: 10px 12px; margin-bottom: 6px; flex-wrap: wrap; }
+.item-row .iname { font-size: 14px; color: #e8c96a; }
+.item-row .idesc { flex: 1; min-width: 200px; font-size: 12px; color: #b8ac94; line-height: 1.6; }
+.item-row.done { border-style: solid; border-color: #2c2620; opacity: .75; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div>
+      <h1>上班修仙傳</h1>
+      <div class="sub">練氣不如練肝，飛升不如下班</div>
+    </div>
+    <div>
+      <button class="hbtn" id="btn-shop">福利社</button>
+      <button class="hbtn" id="btn-gear">裝備與道具</button>
+      <button class="hbtn" id="btn-roster">人物名冊</button>
+      <button class="hbtn" id="btn-tut">教學</button>
+      <button class="hbtn" id="btn-save">存檔碼</button>
+      <button class="hbtn" id="btn-reset">重新入職</button>
+    </div>
+  </header>
+
+  <div id="scene">
+    <div class="shade"></div>
+    <div id="loc-name"></div>
+    <div id="loc-desc"></div>
+    <div id="npc-row"></div>
+  </div>
+
+  <div id="hud">
+    <div id="hud-top">
+      <img id="p-avatar" src="" alt="" title="點擊更換大頭照">
+      <span id="p-name">—</span>
+      <span class="badge" id="p-lv">Lv 1</span>
+      <span class="badge" id="p-realm">—</span>
+      <span class="badge" id="p-school" style="display:none;">—</span>
+      <span class="badge" id="stones-badge">靈石 0</span>
+      <span class="badge" id="shard-badge">肝晶 0</span>
+      <span class="badge" id="break-badge">突破率 —</span>
+    </div>
+    <div class="barrow"><span class="lbl">體力（現實時間恢復）</span><div class="barwrap"><div class="bar" id="sta-bar"></div></div><span class="val" id="sta-val">—</span></div>
+    <div class="barrow"><span class="lbl">修為</span><div class="barwrap"><div class="bar" id="qi-bar"></div></div><span class="val" id="qi-val">—</span></div>
+    <div class="barrow"><span class="lbl">經驗</span><div class="barwrap"><div class="bar" id="xp-bar"></div></div><span class="val" id="xp-val">—</span></div>
+    <div class="barrow"><span class="lbl">心魔</span><div class="barwrap"><div class="bar" id="demon-bar"></div></div><span class="val" id="demon-val">—</span></div>
+  </div>
+
+  <div id="controls">
+    <p class="cap">移動指令</p>
+    <div class="btnrow" id="move-row"></div>
+    <p class="cap">這裡能做的事</p>
+    <div class="btnrow" id="act-row"></div>
+    <div id="cmd-row">
+      <input id="cmd-input" placeholder="輸入指令：上班、吃飯、去頂樓……">
+      <button class="gbtn" id="btn-cmd">執行</button>
+    </div>
+  </div>
+
+  <div id="quests">
+    <h3>派工任務（阿慶每三小時發放，逾期記心魔）</h3>
+    <div id="task-box">—</div>
+    <h3>同事的請託</h3>
+    <div id="help-box">—</div>
+    <h3>特殊能力（升級解鎖）</h3>
+    <ul id="skill-list"></ul>
+    <h3>新手任務（完成有靈石獎勵）</h3>
+    <ul id="quest-list"></ul>
+  </div>
+
+  <div id="log"></div>
+</div>
+
+<div id="dlg-overlay">
+  <div id="dlg-box">
+    <img id="dlg-avatar" src="img/avatar/saika.jpg" alt="">
+    <div style="flex:1;">
+      <div id="dlg-name">彩花<span id="dlg-title"></span></div>
+      <div id="dlg-text"></div>
+      <div id="dlg-input-row">
+        <input id="dlg-input" maxlength="8" placeholder="例如：小黑">
+        <button class="gbtn" id="dlg-ok">就叫這個</button>
+      </div>
+      <div id="dlg-upload-row" style="display:none; margin-top:10px; gap:8px;">
+        <button class="gbtn" id="dlg-upload">上傳大頭照</button>
+        <button class="gbtn" id="dlg-skip">之後再說</button>
+      </div>
+      <div id="dlg-hint">點擊繼續 ▼</div>
+    </div>
+  </div>
+</div>
+<input type="file" id="avatar-file" accept="image/*" style="display:none">
+
+<div id="shop-overlay">
+  <div id="shop-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h2 style="font-size:18px; color:#c9a54e; letter-spacing:2px;">怪物集團福利社</h2>
+      <button class="hbtn" id="shop-close">關閉</button>
+    </div>
+    <div class="shop-sec">
+      <h3>儲值中心（妮露營業中・絕不收真錢）</h3>
+      <p>每日一次，儲值 NT$0 可獲得 200 靈石。累計次數提升 VIP 等級，權益：無。</p>
+      <button class="gbtn" id="btn-recharge">儲值 NT$0</button>
+      <span id="vip-label" style="font-size:12px; color:#8a7f6a; margin-left:10px;"></span>
+    </div>
+    <div class="shop-sec">
+      <h3>福袋轉蛋（葛羅營業中）</h3>
+      <p>轉出辦公室裝備！重複的裝備會熔煉成「肝晶」，用於高階強化。</p>
+      <button class="gbtn" id="btn-pull1">單抽（100 靈石）</button>
+      <button class="gbtn" id="btn-pull10">十連（900 靈石）</button>
+      <p class="tiny">機率：N 60%｜R 28%｜SR 10%｜SSR 2%（十連保底 R 以上）※ 字這麼小是葛羅堅持的，他說這叫業界良心。</p>
+    </div>
+  </div>
+</div>
+
+<div id="gear-overlay">
+  <div id="gear-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h2 style="font-size:18px; color:#c9a54e; letter-spacing:2px;">裝備與道具</h2>
+      <button class="hbtn" id="gear-close">關閉</button>
+    </div>
+    <div id="gear-items"></div>
+    <div id="gear-slots"></div>
+    <div id="gear-list"></div>
+  </div>
+</div>
+
+<div id="roster-overlay">
+  <div id="roster-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h2 style="font-size:18px; color:#c9a54e; letter-spacing:2px;">人物名冊</h2>
+      <button class="hbtn" id="roster-close">關閉</button>
+    </div>
+    <div id="roster-grid"></div>
+    <div id="roster-detail"></div>
+  </div>
+</div>
+
+<div id="dungeon-overlay">
+  <div id="dg-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <h2 id="dg-title" style="font-size:17px; color:#c9a54e; letter-spacing:2px;">副本</h2>
+      <button class="hbtn" id="dg-retreat">撤退</button>
+    </div>
+    <div id="dg-battle-panel">
+      <div class="dg-unit">
+        <img id="dg-ehead" src="" alt="">
+        <div style="flex:1;">
+          <div id="dg-ename" class="dg-uname">敵人</div>
+          <div class="dg-hpwrap"><div id="dg-ehp" class="dg-hp" style="background:#c94b4b;"></div></div>
+          <div id="dg-ehp-val" class="dg-hpval">—</div>
+        </div>
+      </div>
+      <div class="dg-vs">VS</div>
+      <div class="dg-unit">
+        <img id="dg-phead" src="" alt="">
+        <div style="flex:1;">
+          <div id="dg-pname" class="dg-uname">你</div>
+          <div class="dg-hpwrap"><div id="dg-php" class="dg-hp" style="background:#5fae7f;"></div></div>
+          <div id="dg-php-val" class="dg-hpval">—</div>
+        </div>
+      </div>
+      <div id="dg-blog"></div>
+    </div>
+    <div id="dg-text-box">
+      <img id="dg-avatar" src="" alt="">
+      <div style="flex:1;">
+        <div id="dg-who">—</div>
+        <div id="dg-text">—</div>
+      </div>
+    </div>
+    <div id="dg-actions"></div>
+  </div>
+</div>
+
+<script src="story.js"></script>
+<script src="dungeons.js"></script>
+<script>
+"use strict";
+var REGEN_SEC = 5, DEMO = true;
+var TASK_INTERVAL_MS = 3*3600*1000, TASK_DURATION_MS = 3*3600*1000;
+var SAVE_KEY = "banxiu_save_v1";
+
+var CHARS = {
+  saika:  { name:"彩花", title:"接待・天選系掌門", img:"img/avatar/saika.jpg" },
+  komi:   { name:"小米", title:"客服祭司・話術系掌門", img:"img/avatar/komi.jpg" },
+  adi:    { name:"阿低", title:"工程師・爆肝系掌門", img:"img/avatar/adi.jpg" },
+  aqing:  { name:"阿慶", title:"行銷經理・外包系掌門", img:"img/avatar/aqing.jpg" },
+  xiaoyan:{ name:"小燕", title:"指揮官・管理系掌門", img:"img/avatar/xiaoyan.jpg" },
+  ajie:   { name:"阿傑", title:"設計巫師・簡報系掌門", img:"img/avatar/ajie.jpg" },
+  niru:   { name:"妮露", title:"外包人事・怪物集團", img:"img/avatar/niru.jpg" },
+  goro:   { name:"葛羅", title:"KPI 稽核・怪物集團", img:"img/avatar/goro.jpg" },
+  boss:   { name:"老闆", title:"創辦人・？？？", img:"img/avatar/boss.jpg" }
+};
+var ROSTER_ORDER = ["saika","aqing","adi","komi","xiaoyan","ajie","niru","goro","boss"];
+function fmt(t){ return String(t).split("{name}").join(s && s.name ? s.name : "道友"); }
+
+var NPC_LINES = {
+  saika: ["用心款待每一位客人，也是我每天最開心的事。","打完了？剩下交給我——三秒，乾淨如新。","餐廳的定食可以回體力，中午記得回來。"],
+  komi:  ["您的怒氣，由我來淨化。","深呼吸。客戶說的話，讓它從左耳流進回收桶。","我的 MP 永不見底，你的心魔交給我。"],
+  adi:   ["系統不倒，我就不退。","這 bug 我來扛，你先去修煉。","寫程式不是為了解決問題，而是為了讓世界變得更有秩序。"],
+  aqing: ["他懂個屁行銷！每天都在過地獄啊！……剛剛那句別跟老闆說。","先把修為練起來，任務我之後派給你。","我只是個夾在老闆與部屬之間的緩衝材……"],
+  xiaoyan:["排好隊，一個一個來——盾我來扛，需求我來砍。","會議超過三十分鐘的部分，都算修行。","預算聖盾展開中，你們安心輸出。"],
+  ajie:  ["閉嘴，吃我一發排版魔法。……哦，是你啊。","觀察生活，設計生活的可能性。","頂樓的風，比辦公室的冷氣誠實多了。"]
+};
+
+var SCHOOLS = {
+  "爆肝系":{orig:"強化系", test:"咖啡竟然變多了——你的社畜之氣是純粹的產能。", perk:"上班修為 +50%，體力上限 +20", w:18.4},
+  "外包系":{orig:"放出系", test:"咖啡濺到了隔壁桌——你天生擅長把事情丟出去。", perk:"任何地點都能遠端上班，移動免體力", w:18.4},
+  "話術系":{orig:"變化系", test:"咖啡變甜了——你能把任何東西包裝成別的東西。", perk:"減心魔效果加倍，突破成功率 +10%", w:18.4},
+  "管理系":{orig:"操作系", test:"攪拌棒自己攪了起來——你不必親自動手。", perk:"靈石收入 +60%", w:18.4},
+  "簡報系":{orig:"具現化系", test:"咖啡表面浮出了一頁季度報表——你能無中生有。", perk:"消費半價，飲食效果 +50%", w:18.4},
+  "天選系":{orig:"特質系", test:"咖啡變成了珍珠奶茶。阿慶沉默三秒：「……令尊是？」", perk:"壞事不會發生在你身上", w:8}
+};
+
+var REALMS = [
+  {name:"練氣期・無薪實習生", need:100, salary:8},
+  {name:"築基期・試用期社畜", need:250, salary:16},
+  {name:"金丹期・正職專員", need:600, salary:30},
+  {name:"元嬰期・資深扛壩子", need:1400, salary:60},
+  {name:"化神期・小主管", need:3000, salary:120},
+  {name:"飛升・財富自由退休", need:Infinity, salary:0}
+];
+
+var LOCS = {
+  "工位":  { bg:"img/bg/office.jpg", desc:"你的本命洞府，靈氣（冷氣）充足", npcs:["adi","aqing"] },
+  "會議室":{ bg:"img/bg/meeting.jpg", desc:"吞噬修為的結界，小燕在此坐鎮", npcs:["xiaoyan"] },
+  "餐廳":  { bg:"img/bg/restaurant.jpg", desc:"「四季的味」，中午的渡劫窗口", npcs:["saika"] },
+  "茶水間":{ bg:"img/bg/pantry.jpg", desc:"靈氣（咖啡因）補給站", npcs:["komi"] },
+  "頂樓":  { bg:"img/bg/rooftop.jpg", desc:"風很涼，天很藍，沒有主管", npcs:["ajie"] }
+};
+
+var QUESTS = [
+  {id:"test", text:"完成水見式入職測驗", reward:50},
+  {id:"work", text:"打卡上班一次", reward:30},
+  {id:"eat",  text:"在餐廳吃一次飯", reward:30},
+  {id:"komi", text:"到茶水間找小米淨化心魔", reward:30},
+  {id:"gacha",text:"到福利社抽一次轉蛋", reward:50},
+  {id:"equip",text:"裝上一件裝備", reward:30},
+  {id:"brk",  text:"提交一次升遷簽呈（突破）", reward:100}
+];
+
+var s = null;
+function freshState(){
+  return { name:"", school:null, r:0, qi:0, stones:30, demon:0, sta:100,
+           loc:"餐廳", lastTs:Date.now(), quests:{}, introDone:false, avatar:null,
+           xp:0, lv:1, met:{}, task:null, lastTaskTs:Date.now(),
+           chat:{}, files:{}, help:null, helpDone:{}, story:0, lastLoginDay:"",
+           gear:{}, equip:{tie:null,kb:null,chair:null,mug:null}, shards:0, pulls:0,
+           rechargeCount:0, lastRechargeDay:"", shopChatG:0, shopChatN:0, storyDone:{},
+           items:{}, dungeonClear:{} };
+}
+function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(s)); }catch(e){} }
+function load(){ try{ var d=localStorage.getItem(SAVE_KEY); return d?JSON.parse(d):null; }catch(e){ return null; } }
+
+var SLOT_INFO = {
+  tie:  { label:"領帶",   stat:"突破成功率", unit:"%", perLv:1 },
+  kb:   { label:"鍵盤",   stat:"上班修為",   unit:"%", perLv:2 },
+  chair:{ label:"椅子",   stat:"體力上限",   unit:"",  perLv:3 },
+  mug:  { label:"馬克杯", stat:"飲食效果",   unit:"%", perLv:3 }
+};
+var RAR_NAMES=["","N","R","SR","SSR"];
+var RAR_COLORS=["","#8a7f6a","#6f86b5","#a06fc9","#e8a13c"];
+function itemById(id){ var f=null; if(window.STORYDATA) STORYDATA.ITEMS.forEach(function(it){ if(it.id===id) f=it; }); return f; }
+function gearStat(slot){
+  if(!s.equip || !window.STORYDATA) return 0;
+  var id=s.equip[slot];
+  if(!id || !(id in s.gear)) return 0;
+  var it=itemById(id); if(!it) return 0;
+  return it.power + (s.gear[id]||0)*SLOT_INFO[slot].perLv;
+}
+function pickLine(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function maxSta(){ return (s.school==="爆肝系"?120:100) + (s.lv-1)*2 + gearStat("chair"); }
+function breakChance(){
+  return Math.min(99, Math.max(10, Math.round(90-s.demon*0.6)) + (s.school==="話術系"?10:0) + gearStat("tie"));
+}
+function qiMul(){ return s.school==="爆肝系"?1.5:1; }
+function salMul(){ return s.school==="管理系"?1.6:1; }
+function cost(x){ return s.school==="簡報系"?Math.round(x/2):x; }
+function foodMul(){ return (s.school==="簡報系"?1.5:1)*(1+gearStat("mug")/100); }
+function heal(x){ s.demon -= (s.school==="話術系"? x*2 : x); }
+function clamp(){ s.demon=Math.min(100,Math.max(0,s.demon)); s.sta=Math.min(maxSta(),Math.max(0,s.sta)); }
+
+/* ---------- level & skills ---------- */
+var SKILLS = [
+  {lv:2, name:"一頁式簡報術", desc:"會議室行動體力減半"},
+  {lv:3, name:"鍵盤心流", desc:"上班／加班體力 -20%"},
+  {lv:5, name:"帶薪如廁", desc:"任何行動 15% 機率不耗體力"},
+  {lv:7, name:"已讀不回結界", desc:"壞事件機率減半"}
+];
+function xpNeed(){ return s.lv*100; }
+function gainXp(n){
+  s.xp+=n;
+  while(s.xp>=xpNeed()){
+    s.xp-=xpNeed(); s.lv++;
+    log("等級提升！Lv "+s.lv+"（體力上限 +2、薪資 +5%）");
+    SKILLS.forEach(function(k){ if(k.lv===s.lv) log("解鎖特殊能力「"+k.name+"」："+k.desc); });
+    if(window.DUNGEONS){
+      Object.keys(DUNGEONS).forEach(function(k){
+        var d=DUNGEONS[k];
+        if(d.lv===s.lv && !s.dungeonClear[k]){
+          s.items[k]=(s.items[k]||0)+1;
+          log("【獲得道具】「"+d.ticket+"」——"+CHARS[d.owner].name+"好像遇到麻煩了。到「裝備與道具」使用它，進入劇情副本。");
+        }
+      });
+    }
+  }
+}
+function hasSkill(name){ var ok=false; SKILLS.forEach(function(k){ if(k.name===name && s.lv>=k.lv) ok=true; }); return ok; }
+function effCost(base, tag){
+  var c=base;
+  if(tag==="meeting" && hasSkill("一頁式簡報術")) c=Math.round(c/2);
+  if(tag==="work" && hasSkill("鍵盤心流")) c=Math.round(c*0.8);
+  return c;
+}
+
+/* ---------- dispatch tasks（派工） ---------- */
+var TASK_POOL = [
+  {cmd:"上班", n:3, desc:"老闆盯進度——打卡上班 3 次", reward:80},
+  {cmd:"開會", n:2, desc:"跨部門對齊——開會 2 次", reward:70},
+  {cmd:"吃飯", n:1, desc:"幫部門訂便當——去餐廳吃飯 1 次", reward:40},
+  {cmd:"喝咖啡", n:2, desc:"阿慶的續命水——喝咖啡 2 次", reward:50},
+  {cmd:"修煉", n:2, desc:"自主進修（無加班費）——頂樓偷偷修煉 2 次", reward:60}
+];
+function issueTask(){
+  var t=TASK_POOL[Math.floor(Math.random()*TASK_POOL.length)];
+  s.task={cmd:t.cmd, n:t.n, desc:t.desc, reward:t.reward, count:0, expireTs:Date.now()+TASK_DURATION_MS};
+  save();
+  say([{who:"aqing", text:"上頭派工下來了——「"+t.desc+"」。三小時內完成，獎勵 "+t.reward+" 靈石。拜託了，我不想再被唸了。"}]);
+}
+function failTask(){
+  s.task=null; s.lastTaskTs=Date.now(); s.demon+=15; s.met.goro=true; save();
+  say([{who:"goro", text:"派工逾期！效率、服從、利潤——你一項都沒做到，記你一筆。（心魔 +15）"}]);
+}
+function taskProg(cmd){
+  if(!s.task || s.task.cmd!==cmd) return;
+  s.task.count++;
+  if(s.task.count>=s.task.n){
+    var rw=s.task.reward;
+    s.stones+=rw; gainXp(30);
+    s.task=null; s.lastTaskTs=Date.now(); save();
+    say([{who:"aqing", text:"派工完成！獎勵 "+rw+" 靈石、經驗 +30。你比我上一個部屬可靠多了……他上個月說要去修仙。啊，你們現在都在修仙。"}]);
+  } else {
+    log("派工進度："+s.task.count+" / "+s.task.n);
+  }
+}
+function checkTask(){
+  if(!s.introDone) return;
+  var now=Date.now();
+  if(s.task && now>s.task.expireTs){ failTask(); return; }
+  if(!s.task && now-s.lastTaskTs>=TASK_INTERVAL_MS){
+    if(document.getElementById("dlg-overlay").style.display==="block") return;
+    issueTask();
+  }
+}
+function fmtDur(ms){
+  var t=Math.ceil(ms/1000);
+  var h=Math.floor(t/3600), m=Math.floor((t%3600)/60), sec=t%60;
+  return (h>0?h+" 小時 ":"")+(m>0?m+" 分 ":"")+sec+" 秒";
+}
+
+function regen(){
+  var now=Date.now(), p=Math.floor((now-s.lastTs)/(REGEN_SEC*1000));
+  if(p>0){ s.sta=Math.min(maxSta(), s.sta+p); s.lastTs+=p*REGEN_SEC*1000; }
+}
+
+/* ---------- player avatar ---------- */
+var _initCache={ name:null, url:null };
+function initialsAvatar(){
+  var n=(s.name||"？").charAt(0);
+  if(_initCache.name===n) return _initCache.url;
+  var c=document.createElement("canvas"); c.width=200; c.height=200;
+  var g=c.getContext("2d");
+  g.fillStyle="#3d3423"; g.fillRect(0,0,200,200);
+  g.fillStyle="#e8c96a"; g.font="100px 'Microsoft JhengHei', sans-serif";
+  g.textAlign="center"; g.textBaseline="middle";
+  g.fillText(n, 100, 110);
+  _initCache.name=n; _initCache.url=c.toDataURL("image/png");
+  return _initCache.url;
+}
+function playerAvatar(){ return s.avatar || initialsAvatar(); }
+var avatarCb=null;
+function pickAvatar(cb){ avatarCb=cb||null; document.getElementById("avatar-file").click(); }
+document.getElementById("avatar-file").addEventListener("change", function(){
+  var f=this.files[0]; this.value="";
+  if(!f) return;
+  var rd=new FileReader();
+  rd.onload=function(){
+    var img=new Image();
+    img.onload=function(){
+      var side=Math.min(img.width, img.height);
+      var c=document.createElement("canvas"); c.width=200; c.height=200;
+      c.getContext("2d").drawImage(img, (img.width-side)/2, (img.height-side)/2, side, side, 0, 0, 200, 200);
+      s.avatar=c.toDataURL("image/jpeg", 0.85);
+      save(); render();
+      log("員工識別證的大頭照已更新。");
+      var cb=avatarCb; avatarCb=null; if(cb) cb();
+    };
+    img.onerror=function(){ log("這張圖片讀不出來，換一張試試。"); var cb=avatarCb; avatarCb=null; if(cb) cb(); };
+    img.src=rd.result;
+  };
+  rd.readAsDataURL(f);
+});
+
+var logs=[];
+function log(m){
+  logs.unshift(m); if(logs.length>6) logs.pop();
+  document.getElementById("log").innerHTML=logs.map(function(x){return "<div>"+x+"</div>";}).join("");
+}
+
+/* ---------- dialog system ---------- */
+var dq=[], dcb=null, dcur=null;
+function say(seq, cb){ dq=seq.slice(); dcb=cb||null; document.getElementById("dlg-overlay").style.display="block"; next(); }
+function next(){
+  if(!dq.length){ document.getElementById("dlg-overlay").style.display="none"; dcur=null; var c=dcb; dcb=null; render(); if(c)c(); return; }
+  dcur=dq.shift();
+  if(dcur.pre) dcur.pre();
+  var ch = dcur.who==="player"
+    ? { name:(s.name||"你"), title:"社畜修士", img:playerAvatar() }
+    : CHARS[dcur.who];
+  document.getElementById("dlg-avatar").src=ch.img;
+  document.getElementById("dlg-name").childNodes[0].nodeValue=ch.name;
+  document.getElementById("dlg-title").textContent=ch.title;
+  document.getElementById("dlg-text").textContent=(typeof dcur.text==="function")?dcur.text():dcur.text;
+  var inputRow=document.getElementById("dlg-input-row");
+  inputRow.style.display=dcur.input?"flex":"none";
+  document.getElementById("dlg-upload-row").style.display=dcur.upload?"flex":"none";
+  document.getElementById("dlg-hint").style.display=(dcur.input||dcur.upload)?"none":"block";
+  if(dcur.input) setTimeout(function(){ document.getElementById("dlg-input").focus(); }, 50);
+}
+document.getElementById("dlg-overlay").addEventListener("click", function(e){
+  if(dcur && (dcur.input || dcur.upload)) return;
+  if(e.target.closest("#dlg-input-row") || e.target.closest("#dlg-upload-row")) return;
+  next();
+});
+document.getElementById("dlg-upload").addEventListener("click", function(){ pickAvatar(function(){ next(); }); });
+document.getElementById("dlg-skip").addEventListener("click", function(){ next(); });
+function submitName(){
+  var n=document.getElementById("dlg-input").value.trim();
+  if(!n){ document.getElementById("dlg-input").placeholder="道號不能是空的！"; return; }
+  s.name=n; save();
+  document.getElementById("dlg-input").value="";
+  next();
+}
+document.getElementById("dlg-ok").addEventListener("click", submitName);
+document.getElementById("dlg-input").addEventListener("keydown", function(e){ if(e.key==="Enter") submitName(); });
+
+/* ---------- quests ---------- */
+function questDone(id){
+  if(s.quests[id]) return;
+  var q=null; QUESTS.forEach(function(x){ if(x.id===id) q=x; });
+  s.quests[id]=true; s.stones+=q.reward;
+  log("新手任務完成：「"+q.text+"」，獲得靈石 +"+q.reward);
+}
+
+/* ---------- schools ---------- */
+function rollSchool(){
+  var roll=Math.random()*100, acc=0, picked=null;
+  Object.keys(SCHOOLS).forEach(function(k){ acc+=SCHOOLS[k].w; if(!picked && roll<acc) picked=k; });
+  return picked||"爆肝系";
+}
+
+/* ---------- actions ---------- */
+function pay(c, fn){
+  if(c>0 && hasSkill("帶薪如廁") && Math.random()<0.15){
+    log("（特殊能力「帶薪如廁」發動：這次行動不消耗體力）");
+    fn(); return true;
+  }
+  if(s.sta<c){ log("體力不足（需要 "+c+"）。等現實時間恢復，或去餐廳吃飯。"); return false; }
+  s.sta-=c; fn(); return true;
+}
+var goodEvents=[
+  function(){ heal(10); log("同事請喝手搖，心魔下降。"); },
+  function(){ s.qi+=20; log("你在鍵盤聲中頓悟了 KPI 的真義，修為 +20"); },
+  function(){ s.stones+=40; log("報帳終於下來了，靈石 +40"); },
+  function(){ s.stones+=30; log("你在樓梯間撿到 30 靈石。交給彩花後，她說「拾金不昧，本店招待」又還給了你。靈石 +30"); },
+  function(){ s.sta=Math.min(maxSta(),s.sta+15); log("彩花偷偷多給你一塊唐揚雞。體力 +15"); },
+  function(){ s.qi+=15; log("IT 部悄悄幫你換了新滑鼠墊，手感 +1。修為 +15"); },
+  function(){ heal(12); log("小燕在會議上一句話幫全組擋掉一個新需求。你隔空感到心魔下降。"); },
+  function(){ s.stones+=25; log("自動販賣機多掉了一罐咖啡。你抬頭看了看監視器，它眨了眨。靈石 +25"); }
+];
+function villainGoro(){
+  s.demon+=10; s.met.goro=true;
+  say([{who:"goro", text:"你今天的數字，就是我明天的獎金。乖一點，會有加班費喔～呵呵呵！（心魔 +10）"}]);
+}
+function villainNiru(){
+  s.demon+=8; s.met.niru=true;
+  say([{who:"niru", text:"你的加班單我核准了——「無加班費」的部分。每一次簽核，都是利潤的開始。（心魔 +8）"}]);
+}
+var badEvents=[
+  function(){ s.demon+=12; log("主管路過說「當作自己家」，心魔 +12"); },
+  function(){ s.qi=Math.max(0,s.qi-15); log("臨時被抓進兩小時的會，修為 -15"); },
+  function(){ s.demon+=8; log("改了三輪的需求，改回了第一版。心魔 +8"); },
+  function(){ s.demon+=6; log("印表機在你面前卡紙第七次。它在挑釁。心魔 +6"); },
+  function(){ s.demon+=5; log("電梯裡有人把八層樓全按了。心魔 +5"); },
+  function(){ s.demon+=7; log("「在嗎？」——訊息只有這兩個字，然後對方消失了四十分鐘。心魔 +7"); },
+  function(){ s.qi=Math.max(0,s.qi-10); log("你的午餐被吃了，便當盒上貼著「借一下」。修為 -10，因為這種事悟不了。"); },
+  villainGoro, villainNiru
+];
+function maybeScene(cmd){
+  if(!window.STORYDATA || !STORYDATA.SCENES || !STORYDATA.SCENES[cmd]) return;
+  if(document.getElementById("dlg-overlay").style.display==="block") return;
+  if(Math.random()>=0.12) return;
+  var sc=pickLine(STORYDATA.SCENES[cmd]);
+  say(sc.map(function(l){ return {who:l[0], text:fmt(l[1])}; }));
+}
+function randomEvent(){
+  var pool = s.school==="天選系" ? goodEvents : goodEvents.concat(badEvents);
+  var e = pool[Math.floor(Math.random()*pool.length)];
+  if(badEvents.indexOf(e)>=0 && hasSkill("已讀不回結界") && Math.random()<0.5){
+    e = goodEvents[Math.floor(Math.random()*goodEvents.length)];
+  }
+  e();
+}
+function work(overtime){
+  pay(effCost(overtime?30:15, "work"), function(){
+    var g=Math.round((overtime?25+s.r*12:10+s.r*6)*qiMul()*(1+gearStat("kb")/100));
+    var m=Math.round(REALMS[s.r].salary*(overtime?2:1)*salMul()*(1+0.05*(s.lv-1)));
+    s.qi+=g; s.stones+=m; s.demon+=overtime?12:4;
+    var remote=s.loc!=="工位"?"（遠端）":"";
+    log((overtime?"深夜辦公室靈氣濃郁（冷氣很強）":"你運轉《社畜心經》"+remote)+"，修為 +"+g+"，靈石 +"+m);
+    gainXp(overtime?24:12);
+    progressCmd("上班");
+    if(overtime) progressCmd("加班");
+    questDone("work");
+    if(Math.random()<0.2) randomEvent();
+    maybeScene(overtime?"加班":"上班");
+  });
+}
+function doBreak(){
+  var r=REALMS[s.r];
+  if(s.qi<r.need){ log("修為未滿（"+Math.round(s.qi)+" / "+r.need+"），簽呈連影本都不用印。"); return; }
+  var c=breakChance();
+  s.met.niru=true;
+  var rBefore=s.r;
+  say([
+    {who:"niru", text:"收到你的升遷簽呈。人力價值評估中……數字不會說謊。"},
+    {who:"niru", text:function(){
+      if(Math.random()*100<c){
+        s.qi=0; s.r++; s.demon=Math.max(0,s.demon-30); questDone("brk"); save();
+        return s.r===REALMS.length-1
+          ? "簽核完成。"+s.name+"，你已飛升——從此已讀不回。系統將你標記為「傳說」。"
+          : "簽核完成。恭喜晉升「"+REALMS[s.r].name+"」。祝你為集團創造更多利潤。";
+      }
+      questDone("brk");
+      if(s.school==="天選系"){ save(); return "簽呈退回——但十分鐘後有人打了通電話。人事決定「再觀察一季」，你的修為未受損。"; }
+      s.qi=Math.round(s.qi*0.7); s.demon+=15; save();
+      return "流程不正確，退回重辦。你的位置由空降人選補上。（走火入魔：修為 -30%，心魔 +15）";
+    }}
+  ], function(){
+    if(s.r>rBefore && s.r<REALMS.length-1 && window.STORYDATA && STORYDATA.BREAK_GRATZ){
+      var gz=pickLine(STORYDATA.BREAK_GRATZ);
+      say([{who:gz[0], text:fmt(gz[1])}]);
+    }
+  });
+}
+var ACTIONS = {
+  "工位":[
+    {label:function(){return "上班（體力 "+effCost(15,"work")+"）";}, cmd:"上班", run:function(){ work(false); }},
+    {label:function(){return "加班（體力 "+effCost(30,"work")+"）";}, cmd:"加班", run:function(){ work(true); }},
+    {label:function(){return "提交升遷簽呈";}, cmd:"突破", run:doBreak}
+  ],
+  "會議室":[
+    {label:function(){return "開會（體力 "+effCost(20,"meeting")+"）";}, cmd:"開會", run:function(){ pay(effCost(20,"meeting"), function(){ var g=Math.round(25*qiMul()); s.qi+=g; s.demon+=10; gainXp(14); progressCmd("開會"); log("兩小時的會開完，你悟了，但也累了。修為 +"+g+"，心魔 +10"); maybeScene("開會"); }); }},
+    {label:function(){return "摸魚做筆記（體力 "+effCost(10,"meeting")+"）";}, cmd:"摸魚", run:function(){ pay(effCost(10,"meeting"), function(){ var g=Math.round(15*qiMul()); s.qi+=g; gainXp(8); log("你在會議紀錄的掩護下偷偷修煉。修為 +"+g); }); }}
+  ],
+  "餐廳":[
+    {label:function(){return "吃飯（靈石 "+cost(20)+"）";}, cmd:"吃飯", run:function(){ var c=cost(20); if(s.stones<c){ log("靈石不足，只能聞別人的便當味。"); return; } s.stones-=c; var g=Math.round(40*foodMul()); s.sta=Math.min(maxSta(), s.sta+g); heal(5); gainXp(3); progressCmd("吃飯"); questDone("eat"); log("中午吃飯是社畜唯一的渡劫窗口。體力 +"+g); maybeScene("吃飯"); }},
+    {label:function(){return "吃大餐（靈石 "+cost(60)+"）";}, cmd:"吃大餐", run:function(){ var c=cost(60); if(s.stones<c){ log("看了看價目表，你默默走向自助餐區。"); return; } s.stones-=c; s.sta=maxSta(); heal(15); gainXp(5); progressCmd("吃飯"); questDone("eat"); log("燒肉定食入腹，丹田溫熱。體力全滿"); }}
+  ],
+  "茶水間":[
+    {label:function(){return "喝咖啡（靈石 "+cost(15)+"）";}, cmd:"喝咖啡", run:function(){ var c=cost(15); if(s.stones<c){ log("靈石不足，你喝了免費濾掛，總覺得少了點什麼。"); s.sta=Math.min(maxSta(),s.sta+5); return; } s.stones-=c; var g=Math.round(20*foodMul()); s.sta=Math.min(maxSta(), s.sta+g); heal(8); gainXp(3); progressCmd("喝咖啡"); log("靈氣（咖啡因）入體，體力 +"+g); maybeScene("喝咖啡"); }},
+    {label:function(){return "聊八卦（體力 5）";}, cmd:"聊八卦", run:function(){ pay(5, function(){ gainXp(5); progressCmd("聊八卦"); if(Math.random()<0.5){ heal(15); log("聽說隔壁部門的總監要走了，你心情莫名變好。"); } else { s.qi+=20; log("同事透露了績效考核的內幕，你若有所悟。修為 +20"); } }); }}
+  ],
+  "頂樓":[
+    {label:function(){return "發呆（免費）";}, cmd:"發呆", run:function(){ if(s.school!=="天選系" && Math.random()<0.2){ s.demon+=10; log("你正望著天空，主管突然出現：「在忙嗎？」心魔 +10"); } else { heal(20); log(window.STORYDATA&&STORYDATA.ROOFTOP_THOUGHTS?pickLine(STORYDATA.ROOFTOP_THOUGHTS):"風很涼，天很藍，你什麼都沒想。"); } }},
+    {label:function(){return "偷偷修煉（體力 10）";}, cmd:"修煉", run:function(){ pay(10, function(){ var g=Math.round((18+s.r*8)*qiMul()); s.qi+=g; gainXp(10); progressCmd("修煉"); log("頂樓無人打擾，靈氣純淨。修為 +"+g); }); }}
+  ]
+};
+if (ACTIONS["工位"]) ACTIONS["工位"].push({label:function(){return "向 HR 申請流派重測（靈石 50）";}, cmd:"重測", run:function(){
+  if(!s.school){ log("你還沒做過水見式。"); return; }
+  if(s.stones<50){ say([{who:"niru", text:"重測規費 50 靈石。繳不出來？那流程到此為止。利潤才是唯一的真理。"}]); return; }
+  s.stones-=50;
+  var k=rollSchool();
+  say([
+    {who:"niru", text:"重測申請收訖，規費 50 靈石已入帳。簽核完成，不得再議。"},
+    {who:"aqing", text:function(){ s.school=k; clamp(); save(); return "重測結果——"+SCHOOLS[k].test+" 你現在是「"+k+"」（"+SCHOOLS[k].orig+"）："+SCHOOLS[k].perk; }}
+  ]);
+}});
+
+/* ---------- first-meet introductions ---------- */
+var MEETS = {
+  adi: [
+    {who:"adi", text:"……你是新來的？我是阿低，系統重裝騎士——講人話就是工程師。系統不倒，我就不退。"},
+    {who:"player", text:function(){ return "你好，我是"+s.name+"，請多指教。（系統不倒他就不退……所以這公司是打算讓他站到飛升嗎？黑心。）"; }}
+  ],
+  xiaoyan: [
+    {who:"xiaoyan", text:"新人？我是小燕，戰術聖騎士、指揮輔助副坦。需求我來砍，盾我來扛，你安心輸出就好。"},
+    {who:"player", text:function(){ return "我是"+s.name+"，請多指教！（原來這間公司最可靠的福利，是同事。）"; }}
+  ],
+  komi: [
+    {who:"komi", text:"你好呀，我是小米，客服祭司。您的怒氣，由我來淨化～有心魔隨時來找我。"},
+    {who:"player", text:function(){ return "我是"+s.name+"，初來乍到。（她每天淨化全公司的怒氣，公司卻連心靈保險都沒保……果然黑心。）"; }}
+  ],
+  ajie: [
+    {who:"ajie", text:"……黑魔法師，阿傑。設計魔法、排版魔法，都會一點。太吵的話，吃我一發排版魔法。"},
+    {who:"player", text:function(){ return "我是"+s.name+"，我很安靜的。（連頂樓都有人在用愛發電，這公司的黑心程度大概是深淵級。）"; }}
+  ]
+};
+function checkMeet(){
+  var seq=[];
+  LOCS[s.loc].npcs.forEach(function(id){
+    if(MEETS[id] && !s.met[id]){ s.met[id]=true; seq=seq.concat(MEETS[id]); }
+  });
+  if(seq.length){ save(); say(seq); }
+}
+
+function move(dest){
+  if(dest===s.loc){ log("你已經在"+dest+"了。"); return; }
+  var c=s.school==="外包系"?0:5;
+  pay(c, function(){
+    s.loc=dest;
+    log("你移動到了「"+dest+"」。"+(c===0?"（外包系：移動免體力）":""));
+    checkMeet();
+  });
+}
+
+/* ---------- render ---------- */
+function render(){
+  clamp();
+  var loc=LOCS[s.loc];
+  var scene=document.getElementById("scene");
+  scene.style.backgroundImage="url('"+loc.bg+"')";
+  document.getElementById("loc-name").textContent=s.loc;
+  document.getElementById("loc-desc").textContent=loc.desc;
+  var nr=document.getElementById("npc-row"); nr.innerHTML="";
+  loc.npcs.forEach(function(id){
+    var d=document.createElement("div"); d.className="npc";
+    d.innerHTML='<img src="'+CHARS[id].img+'" alt="'+CHARS[id].name+'"><span>'+CHARS[id].name+"</span>";
+    d.onclick=function(){ talkTo(id); };
+    nr.appendChild(d);
+  });
+  var pa=document.getElementById("p-avatar"), paUrl=playerAvatar();
+  if(pa.src!==paUrl) pa.src=paUrl;
+  document.getElementById("p-name").textContent=s.name||"（未命名）";
+  document.getElementById("p-lv").textContent="Lv "+s.lv;
+  document.getElementById("p-realm").textContent=REALMS[s.r].name;
+  document.getElementById("xp-bar").style.width=Math.min(100, s.xp/xpNeed()*100)+"%";
+  document.getElementById("xp-val").textContent=Math.round(s.xp)+" / "+xpNeed();
+  var sb=document.getElementById("p-school");
+  if(s.school){ sb.style.display="inline-block"; sb.textContent=s.school; } else sb.style.display="none";
+  document.getElementById("stones-badge").textContent="靈石 "+Math.round(s.stones).toLocaleString();
+  document.getElementById("shard-badge").textContent="肝晶 "+(s.shards||0);
+  document.getElementById("break-badge").textContent="突破率 "+breakChance()+"%";
+  document.getElementById("sta-bar").style.width=(s.sta/maxSta()*100)+"%";
+  document.getElementById("sta-val").textContent=Math.round(s.sta)+" / "+maxSta();
+  var r=REALMS[s.r], last=s.r===REALMS.length-1;
+  document.getElementById("qi-bar").style.width=(last?100:Math.min(100,s.qi/r.need*100))+"%";
+  document.getElementById("qi-val").textContent=last?"圓滿":Math.round(s.qi)+" / "+r.need;
+  document.getElementById("demon-bar").style.width=s.demon+"%";
+  document.getElementById("demon-val").textContent=Math.round(s.demon)+"%";
+  var mr=document.getElementById("move-row"); mr.innerHTML="";
+  Object.keys(LOCS).forEach(function(k){
+    var b=document.createElement("button"); b.className="gbtn"+(k===s.loc?" here":"");
+    b.textContent=k===s.loc?k+"（目前）":"去"+k+(s.school==="外包系"?"":"（體力 5）");
+    b.disabled=!s.introDone;
+    b.onclick=function(){ regen(); move(k); render(); save(); };
+    mr.appendChild(b);
+  });
+  var ar=document.getElementById("act-row"); ar.innerHTML="";
+  ACTIONS[s.loc].forEach(function(a){
+    var b=document.createElement("button"); b.className="gbtn";
+    b.textContent=a.label();
+    b.disabled=!s.introDone;
+    b.onclick=function(){ regen(); a.run(); render(); save(); };
+    ar.appendChild(b);
+  });
+  if(s.school==="外包系" && s.loc!=="工位"){
+    var b=document.createElement("button"); b.className="gbtn";
+    b.textContent="遠端上班（體力 15）";
+    b.onclick=function(){ regen(); work(false); render(); save(); };
+    ar.appendChild(b);
+  }
+  var tb=document.getElementById("task-box");
+  if(!s.introDone){ tb.textContent="入職完成後開始派工。"; tb.className=""; }
+  else if(s.task){
+    var remain=Math.max(0, s.task.expireTs-Date.now());
+    tb.textContent="進行中："+s.task.desc+"（"+s.task.count+" / "+s.task.n+"）｜獎勵 "+s.task.reward+" 靈石｜剩餘 "+fmtDur(remain);
+    tb.className=remain<15*60*1000?"urgent":"";
+  } else {
+    var nextIn=Math.max(0, TASK_INTERVAL_MS-(Date.now()-s.lastTaskTs));
+    tb.textContent="目前沒有派工。下次派工："+fmtDur(nextIn)+" 後";
+    tb.className="";
+  }
+  var hb=document.getElementById("help-box");
+  if(s.help){
+    hb.textContent="進行中："+s.help.desc+"（"+s.help.count+" / "+s.help.n+"）｜獎勵 "+s.help.reward+" 靈石";
+  } else {
+    hb.textContent="目前沒有請託。多跟同事聊天，他們會開口的——上班的人都需要幫手。";
+  }
+  var sl=document.getElementById("skill-list"); sl.innerHTML="";
+  SKILLS.forEach(function(k){
+    var li=document.createElement("li");
+    var got=s.lv>=k.lv;
+    li.textContent=(got?"◆ ":"◇ ")+k.name+"——"+k.desc+(got?"":"（Lv "+k.lv+" 解鎖）");
+    if(!got) li.className="locked";
+    sl.appendChild(li);
+  });
+  var ql=document.getElementById("quest-list"); ql.innerHTML="";
+  QUESTS.forEach(function(q){
+    var li=document.createElement("li");
+    li.textContent=(s.quests[q.id]?"✔ ":"□ ")+q.text+"（靈石 +"+q.reward+"）";
+    if(s.quests[q.id]) li.className="done";
+    ql.appendChild(li);
+  });
+}
+
+function talkTo(id){
+  var eps = window.STORYDATA && STORYDATA.CHATS[id];
+  var epIdx = s.chat[id]||0;
+  if(eps && epIdx < eps.length){
+    var ep = eps[epIdx];
+    var ok = true;
+    if(ep.need){
+      if(ep.need.lv && s.lv < ep.need.lv) ok=false;
+      if(ep.need.help && !s.helpDone[id]) ok=false;
+      if(ep.need.realm && s.r < ep.need.realm) ok=false;
+    }
+    if(!ok && Math.random()<0.34){ say([{who:id, text:fmt(ep.hint||"（現在好像不是聊這個的時候。）")}]); return; }
+    if(!ok){ /* 改聊日常，避免每次都重複提示 */ }
+    else {
+    var seq = ep.lines.map(function(l){ return {who:l[0], text:fmt(l[1])}; });
+    say(seq, function(){
+      s.chat[id]=epIdx+1;
+      if(ep.file){
+        s.files[id]=Math.max(s.files[id]||0, ep.file);
+        log("【名冊更新】"+CHARS[id].name+"的資料，現在可以在「人物名冊」觀看（檔案・第 "+ep.file+" 頁）。");
+      }
+      if(ep.help && !s.helpDone[id]){
+        s.help={ id:id, cmd:ep.help.cmd, n:ep.help.n, desc:ep.help.desc, reward:ep.help.reward, thanks:ep.help.thanks, count:0 };
+        log("【協助任務】"+ep.help.desc+"（獎勵 "+ep.help.reward+" 靈石）");
+      }
+      save(); render();
+    });
+    return;
+    }
+  }
+  var lines=(window.STORYDATA && STORYDATA.SMALLTALK && STORYDATA.SMALLTALK[id]) || NPC_LINES[id];
+  var line=lines[Math.floor(Math.random()*lines.length)];
+  if(s.demon>=70 && window.STORYDATA && STORYDATA.SMALLTALK_WORRY && STORYDATA.SMALLTALK_WORRY[id]){
+    line=STORYDATA.SMALLTALK_WORRY[id];
+    heal(5); clamp();
+  }
+  var seq2=[{who:id, text:line}];
+  if(id==="komi"){
+    seq2.push({who:"komi", text:function(){ heal(10); questDone("komi"); clamp(); save(); return "……淨化完成。你的心魔下降了。有需要隨時回來，這裡的怒氣回收桶永遠有空位。"; }});
+  }
+  say(seq2);
+}
+
+/* ---------- colleague help quests ---------- */
+function helpProg(cmd){
+  if(!s.help || s.help.cmd!==cmd) return;
+  s.help.count++;
+  if(s.help.count>=s.help.n){
+    var h=s.help;
+    s.stones+=h.reward; gainXp(25);
+    s.helpDone[h.id]=true; s.help=null; save();
+    say([{who:h.id, text:h.thanks+"（獲得靈石 +"+h.reward+"、經驗 +25）"}]);
+    log("【協助任務完成】"+CHARS[h.id].name+"想跟你多聊聊了，再去找他吧。");
+  } else {
+    log("協助任務進度："+s.help.count+" / "+s.help.n);
+  }
+}
+function progressCmd(cmd){ taskProg(cmd); helpProg(cmd); }
+
+/* ---------- main story ---------- */
+function checkStory(){
+  if(!s.introDone || !window.STORYDATA) return;
+  if(document.getElementById("dlg-overlay").style.display==="block") return;
+  var idx=-1;
+  for(var i=0;i<STORYDATA.STORY.length;i++){
+    if(s.storyDone[i]) continue;
+    var need=STORYDATA.STORY[i].need||{};
+    if(need.r!==undefined && s.r<need.r) continue;
+    if(need.lv!==undefined && s.lv<need.lv) continue;
+    idx=i; break;
+  }
+  if(idx<0) return;
+  var ch=STORYDATA.STORY[idx];
+  s.storyDone[idx]=true;
+  var seq=ch.lines.map(function(l){ return {who:l[0], text:fmt(l[1])}; });
+  ch.lines.forEach(function(l){ if(CHARS[l[0]] && l[0]!=="player") s.met[l[0]]=true; });
+  say(seq, function(){
+    s.stones+=ch.reward;
+    log("【主線】第 "+(idx+1)+" 章「"+ch.title+"」完成，獲得靈石 +"+ch.reward);
+    if(ch.files){
+      Object.keys(ch.files).forEach(function(k){
+        s.met[k]=true;
+        s.files[k]=Math.max(s.files[k]||0, ch.files[k]);
+        log("【名冊更新】"+CHARS[k].name+"的資料，現在可以在「人物名冊」觀看（檔案・第 "+ch.files[k]+" 頁）。");
+      });
+    }
+    save(); render();
+  });
+}
+
+/* ---------- roster ---------- */
+function openRoster(){
+  renderRosterGrid();
+  document.getElementById("roster-detail").style.display="none";
+  document.getElementById("roster-overlay").style.display="block";
+}
+function renderRosterGrid(){
+  var grid=document.getElementById("roster-grid"); grid.innerHTML="";
+  ROSTER_ORDER.forEach(function(id){
+    var known=!!s.met[id];
+    var d=document.createElement("div");
+    d.className="rcard"+(known?"":" unknown");
+    var ch=CHARS[id];
+    d.innerHTML='<img src="'+ch.img+'" alt="">'
+      +'<div class="rname">'+(known?ch.name:"？？？")+'</div>'
+      +'<div class="rtitle">'+(known?ch.title:"尚未認識")+'</div>';
+    if(known) d.onclick=function(){ renderRosterDetail(id); };
+    grid.appendChild(d);
+  });
+}
+function renderRosterDetail(id){
+  var ch=CHARS[id];
+  var p=window.STORYDATA && STORYDATA.PROFILES[id];
+  var box=document.getElementById("roster-detail");
+  var unlocked=s.files[id]||0;
+  var html='<div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">'
+    +'<img src="'+ch.img+'" style="width:56px; height:56px; border-radius:50%; border:2px solid #c9a54e; object-fit:cover;">'
+    +'<div><div style="font-size:16px; color:#f0e6cc;">'+ch.name+'</div>'
+    +'<div style="font-size:12px; color:#8a7f6a;">'+ch.title+'</div></div></div>';
+  if(p){
+    html+='<div style="margin-bottom:8px;">'+p.bio+'</div>';
+    var qi=Math.min(unlocked, p.quit.length-1);
+    var qv=p.quit[qi];
+    var qnum=parseFloat(qv);
+    html+='<div style="font-size:12px; color:#8a7f6a; margin-bottom:2px;">離職慾望：'+qv+'</div>';
+    if(!isNaN(qnum)){
+      html+='<div class="quitwrap"><div class="quitbar" style="width:'+Math.min(100,Math.max(0,qnum))+'%"></div></div>';
+    }
+    p.files.forEach(function(f, i){
+      if(i < unlocked){
+        html+='<div class="fpage">檔案・第 '+(i+1)+' 頁：'+f+'</div>';
+      } else {
+        html+='<div class="fpage locked">檔案・第 '+(i+1)+' 頁：？？？（'+(id==="niru"||id==="goro"||id==="boss"?"推進主線劇情解鎖":"繼續和 TA 聊天解鎖")+'）</div>';
+      }
+    });
+  }
+  box.innerHTML=html;
+  box.style.display="block";
+}
+/* ---------- shop（假課金） ---------- */
+function vipName(){
+  var n=s.rechargeCount||0;
+  if(n>=15) return "鑽石會員（權益：無，但很閃）";
+  if(n>=5) return "白金會員（權益：無）";
+  if(n>=1) return "銀卡會員（權益：無）";
+  return "尚未儲值（權益：也是無）";
+}
+function renderShop(){
+  document.getElementById("vip-label").textContent="VIP："+vipName()+"｜累計儲值 NT$0";
+}
+function doRecharge(){
+  var today=new Date().toDateString();
+  if(s.lastRechargeDay===today){
+    say([{who:"niru", text:"今日已儲值。本櫃台的「免費」是限量的——明天請早。"}]);
+    return;
+  }
+  s.lastRechargeDay=today;
+  s.rechargeCount=(s.rechargeCount||0)+1;
+  s.stones+=200; s.met.niru=true;
+  var seq=[{who:"niru", text:pickLine(STORYDATA.RECHARGE_LINES)+"\n（獲得靈石 +200）"}];
+  var sc=STORYDATA.SHOPCHAT.niru, ms=null;
+  if(s.shopChatN===0) ms=0;
+  else if(s.shopChatN===1 && s.rechargeCount>=5) ms=1;
+  else if(s.shopChatN===2 && s.rechargeCount>=15) ms=2;
+  if(ms!==null){ s.shopChatN++; sc[ms].forEach(function(l){ seq.push({who:l[0], text:fmt(l[1])}); }); }
+  save();
+  say(seq, function(){ renderShop(); render(); });
+}
+function rollRarity(){
+  var r=Math.random()*100;
+  if(r<2) return 4;
+  if(r<12) return 3;
+  if(r<40) return 2;
+  return 1;
+}
+function doGacha(n){
+  var cost=n===10?900:100;
+  if(s.stones<cost){ say([{who:"goro", text:"靈石不足！先去上班！轉蛋機不賒帳——這是它唯一的美德！"}]); return; }
+  s.stones-=cost; s.met.goro=true;
+  var results=[], best=1;
+  for(var i=0;i<n;i++){
+    var rar=rollRarity();
+    if(n===10 && i===n-1 && best<2 && rar<2) rar=2;
+    if(rar>best) best=rar;
+    var pool=STORYDATA.ITEMS.filter(function(it){ return it.r===rar; });
+    var it=pool[Math.floor(Math.random()*pool.length)];
+    var dup=(it.id in s.gear);
+    if(dup){ s.shards=(s.shards||0)+1; } else { s.gear[it.id]=0; }
+    results.push({it:it, dup:dup});
+  }
+  s.pulls=(s.pulls||0)+n;
+  questDone("gacha");
+  var g=STORYDATA.GACHA_LINES;
+  var listText=results.map(function(res){
+    return "【"+RAR_NAMES[res.it.r]+"】"+res.it.name+(res.dup?"（重複→肝晶 ×1）":"（NEW）");
+  }).join("\n");
+  var seq=[
+    {who:"goro", text:pickLine(g.open)},
+    {who:"goro", text:listText},
+    {who:"goro", text:pickLine(g["r"+best])+(best>=3?"":"\n（新裝備記得到「裝備」介面穿上！）")}
+  ];
+  var sc=STORYDATA.SHOPCHAT.goro, ms=null;
+  if(s.shopChatG===0) ms=0;
+  else if(s.shopChatG===1 && n===10) ms=1;
+  else if(s.shopChatG===2 && s.pulls>=30) ms=2;
+  if(ms!==null){ s.shopChatG++; sc[ms].forEach(function(l){ seq.push({who:l[0], text:fmt(l[1])}); }); }
+  save();
+  say(seq, function(){ renderShop(); render(); });
+}
+document.getElementById("btn-shop").addEventListener("click", function(){ renderShop(); document.getElementById("shop-overlay").style.display="block"; });
+document.getElementById("shop-close").addEventListener("click", function(){ document.getElementById("shop-overlay").style.display="none"; });
+document.getElementById("shop-overlay").addEventListener("click", function(e){ if(e.target===this) this.style.display="none"; });
+document.getElementById("btn-recharge").addEventListener("click", doRecharge);
+document.getElementById("btn-pull1").addEventListener("click", function(){ doGacha(1); });
+document.getElementById("btn-pull10").addEventListener("click", function(){ doGacha(10); });
+
+/* ---------- gear（裝備與強化） ---------- */
+function enhanceCost(plus){ return (plus+1)*80; }
+function enhanceRate(plus){ return Math.max(30, 95-plus*10); }
+function doEnhance(id){
+  var it=itemById(id), plus=s.gear[id]||0;
+  if(plus>=9){ log(it.name+" 已達 +9，臻至化境。再強化下去會引來勞檢。"); return; }
+  var cost=enhanceCost(plus), needShard=plus>=4?1:0;
+  if(s.stones<cost){ log("靈石不足（強化需要 "+cost+"）。"); renderGear(); return; }
+  if(needShard && (s.shards||0)<1){ log("+4 之後每次強化需要 1 顆肝晶（轉蛋抽到重複裝備可熔煉取得）。"); renderGear(); return; }
+  s.stones-=cost; if(needShard) s.shards--;
+  if(Math.random()*100<enhanceRate(plus)){
+    s.gear[id]=plus+1;
+    log(pickLine(STORYDATA.ENHANCE_OK).split("{item}").join(it.name+" +"+(plus+1)));
+  } else {
+    log(pickLine(STORYDATA.ENHANCE_FAIL).split("{item}").join(it.name+" +"+plus));
+  }
+  save(); renderGear(); render();
+}
+function doEquip(id){
+  var it=itemById(id);
+  if(s.equip[it.slot]===id){ s.equip[it.slot]=null; log("卸下了 "+it.name+"。"); }
+  else { s.equip[it.slot]=id; questDone("equip"); log("裝備了 "+it.name+"！"+SLOT_INFO[it.slot].stat+"提升。"); }
+  clamp(); save(); renderGear(); render();
+}
+function renderGearItems(){
+  var box=document.getElementById("gear-items"); box.innerHTML="";
+  if(!window.DUNGEONS) return;
+  Object.keys(DUNGEONS).forEach(function(k){
+    var d=DUNGEONS[k];
+    var row=document.createElement("div");
+    if((s.items[k]||0)>0){
+      row.className="item-row";
+      row.innerHTML='<span class="iname">'+d.ticket+' ×'+s.items[k]+'</span><span class="idesc">'+d.ticketDesc+'</span>';
+      var b=document.createElement("button"); b.className="gbtn"; b.textContent="使用（進入副本）";
+      b.onclick=function(){ document.getElementById("gear-overlay").style.display="none"; enterDungeon(k); };
+      row.appendChild(b);
+    } else if(s.dungeonClear[k]){
+      row.className="item-row done";
+      row.innerHTML='<span class="iname" style="color:#6f9a58;">已通關</span><span class="idesc">【'+d.title+'】'+CHARS[d.owner].name+'的危機已解除。道具已在通關時消耗。</span>';
+    } else {
+      row.className="item-row done";
+      row.innerHTML='<span class="iname" style="color:#5f584a;">？？？</span><span class="idesc">Lv '+d.lv+' 時，某位掌門會需要你的幫忙……</span>';
+    }
+    box.appendChild(row);
+  });
+}
+function renderGear(){
+  renderGearItems();
+  var slots=document.getElementById("gear-slots"); slots.innerHTML="";
+  var sum="";
+  Object.keys(SLOT_INFO).forEach(function(sl){
+    var info=SLOT_INFO[sl];
+    var id=s.equip[sl];
+    var txt=id&&itemById(id) ? itemById(id).name+" +"+(s.gear[id]||0)+"（"+info.stat+" +"+gearStat(sl)+info.unit+"）" : "（空）";
+    sum+='<span class="slot-sum">'+info.label+"："+txt+"</span>";
+  });
+  sum+='<span class="slot-sum" style="color:#e8a13c;">肝晶 ×'+(s.shards||0)+"</span>";
+  slots.innerHTML=sum;
+  var list=document.getElementById("gear-list"); list.innerHTML="";
+  var owned=Object.keys(s.gear);
+  if(!owned.length){
+    list.innerHTML='<p style="font-size:13px; color:#8a7f6a;">還沒有任何裝備。去福利社抽轉蛋吧——葛羅在等你。</p>';
+    return;
+  }
+  ["tie","kb","chair","mug"].forEach(function(sl){
+    owned.forEach(function(id){
+      var it=itemById(id); if(!it || it.slot!==sl) return;
+      var plus=s.gear[id]||0;
+      var eq=s.equip[sl]===id;
+      var row=document.createElement("div");
+      row.className="gear-row"+(eq?" equipped":"");
+      var stat=SLOT_INFO[sl].stat+" +"+(it.power+plus*SLOT_INFO[sl].perLv)+SLOT_INFO[sl].unit;
+      row.innerHTML='<span class="rar-badge" style="background:#0e0c09; color:'+RAR_COLORS[it.r]+'; border:1px solid '+RAR_COLORS[it.r]+';">'+RAR_NAMES[it.r]+'</span>'
+        +'<span class="gname">'+it.name+(plus>0?" <span style=\"color:#e8a13c;\">+"+plus+"</span>":"")+'</span>'
+        +'<span class="gstat">'+stat+'</span>';
+      var be=document.createElement("button"); be.className="gbtn"; be.textContent=eq?"卸下":"裝備";
+      be.onclick=function(){ doEquip(id); };
+      var bp=document.createElement("button"); bp.className="gbtn";
+      bp.textContent=plus>=9?"已滿級":"強化（"+enhanceCost(plus)+" 靈石"+(plus>=4?"+1 肝晶":"")+"｜"+enhanceRate(plus)+"%）";
+      bp.disabled=plus>=9;
+      bp.onclick=function(){ doEnhance(id); };
+      row.appendChild(be); row.appendChild(bp);
+      list.appendChild(row);
+    });
+  });
+  var tip=document.createElement("p");
+  tip.style.cssText="font-size:11px; color:#5f584a; margin-top:8px;";
+  tip.textContent="強化失敗不會損壞裝備，只會消耗靈石。本遊戲的強化很溫柔——上班已經很苦了。";
+  list.appendChild(tip);
+}
+document.getElementById("btn-gear").addEventListener("click", function(){ renderGear(); document.getElementById("gear-overlay").style.display="block"; });
+document.getElementById("gear-close").addEventListener("click", function(){ document.getElementById("gear-overlay").style.display="none"; });
+document.getElementById("gear-overlay").addEventListener("click", function(e){ if(e.target===this) this.style.display="none"; });
+
+/* ---------- dungeon engine（劇情副本） ---------- */
+var dg=null;
+var _enemyIconCache={};
+function enemyIcon(enemy){
+  if(enemy.img) return enemy.img;
+  var key=enemy.icon||"敵";
+  if(_enemyIconCache[key]) return _enemyIconCache[key];
+  var c=document.createElement("canvas"); c.width=120; c.height=120;
+  var g=c.getContext("2d");
+  g.fillStyle="#3a1717"; g.fillRect(0,0,120,120);
+  g.fillStyle="#e07a7a"; g.font="64px 'Microsoft JhengHei', sans-serif";
+  g.textAlign="center"; g.textBaseline="middle";
+  g.fillText(key, 60, 66);
+  _enemyIconCache[key]=c.toDataURL("image/png");
+  return _enemyIconCache[key];
+}
+var SCHOOL_SKILLS={
+  "爆肝系":{name:"爆肝十連擊", line:"你燃燒肝值，打出了殘影重疊的十連擊！"},
+  "外包系":{name:"這題外包",   line:"你把這回合的工作量外包給了虛空承包商，對方直接承受了交期壓力！"},
+  "話術系":{name:"話術九迴旋", line:"你用九層話術把對方繞進了邏輯迷宮，出口收費！"},
+  "管理系":{name:"下屬支援要請", line:"你呼叫了想像中的三名下屬進行圍毆！想像力就是戰力！"},
+  "簡報系":{name:"具現化・一頁簡報", line:"你具現化出一頁重點清晰的簡報，拍在對方臉上！字距完美，傷害加倍！"},
+  "天選系":{name:"主角光環",   line:"劇本突然改寫——這一頁的主角是你！"}
+};
+function dgSpeaker(who){
+  if(who==="player") return { name:(s.name||"你"), img:playerAvatar() };
+  var ch=CHARS[who];
+  return { name:ch?ch.name:"", img:ch?ch.img:playerAvatar() };
+}
+function dgActions(btns){
+  var box=document.getElementById("dg-actions"); box.innerHTML="";
+  btns.forEach(function(b){
+    var el=document.createElement("button"); el.className="gbtn"; el.textContent=b[0];
+    el.onclick=b[1];
+    box.appendChild(el);
+  });
+}
+function dgShowText(who, text){
+  var sp=dgSpeaker(who||"player");
+  document.getElementById("dg-avatar").src=sp.img;
+  document.getElementById("dg-who").textContent=sp.name;
+  document.getElementById("dg-text").textContent=fmt(text);
+}
+function enterDungeon(id){
+  var def=DUNGEONS[id];
+  if(!def) return;
+  dg={ def:def, mods:{dice:0, php:0, ehp:0}, battle:null };
+  document.getElementById("dg-battle-panel").style.display="none";
+  document.getElementById("dg-title").textContent="【劇情副本】"+def.title;
+  document.getElementById("dungeon-overlay").style.display="block";
+  runNode(def.start);
+}
+function exitDungeon(){
+  dg=null;
+  document.getElementById("dungeon-overlay").style.display="none";
+  save(); render();
+}
+function applyMod(mod){
+  if(!mod || !dg) return;
+  if(mod.dice) dg.mods.dice+=mod.dice;
+  if(mod.php) dg.mods.php+=mod.php;
+  if(mod.ehp) dg.mods.ehp+=mod.ehp;
+}
+function runNode(nid){
+  if(!dg) return;
+  var n=dg.def.nodes[nid];
+  if(!n){ exitDungeon(); return; }
+  dg.node=n;
+  if(n.t!=="choice" && n.mod) applyMod(n.mod);
+  if(n.t==="say"){
+    document.getElementById("dg-battle-panel").style.display="none";
+    dgShowText(n.who, n.text);
+    dgActions([["繼續 ▼", function(){ runNode(n.next); }]]);
+  }
+  else if(n.t==="choice"){
+    document.getElementById("dg-battle-panel").style.display="none";
+    dgShowText(n.who, n.text);
+    dgActions(n.opts.map(function(o){
+      return [o.label, function(){ applyMod(o.mod); runNode(o.next); }];
+    }));
+  }
+  else if(n.t==="dice"){
+    document.getElementById("dg-battle-panel").style.display="none";
+    dgShowText(n.who, n.text+"\n（需要擲出 "+n.diff+" 以上"+(dg.mods.dice>0?"，目前加成 +"+dg.mods.dice:"")+"）");
+    dgActions([["擲骰！", function(){
+      var roll=1+Math.floor(Math.random()*6);
+      var total=roll+dg.mods.dice;
+      var ok=total>=n.diff;
+      dgShowText(n.who, "骰出 "+roll+(dg.mods.dice>0?"（+"+dg.mods.dice+" 加成 = "+total+"）":"")+"，需要 "+n.diff+"——"+(ok?"檢定成功！":"檢定失敗……"));
+      dgActions([["繼續 ▼", function(){ runNode(ok?n.ok:n.fail); }]]);
+    }]]);
+  }
+  else if(n.t==="battle"){ startDgBattle(n); }
+  else if(n.t==="end"){
+    document.getElementById("dg-battle-panel").style.display="none";
+    var rewardText="";
+    if(n.result==="clear"){
+      var rw=dg.def.reward;
+      s.stones+=rw.stones; s.shards=(s.shards||0)+rw.shards;
+      if((s.items[dg.def.id]||0)>0){ s.items[dg.def.id]--; if(s.items[dg.def.id]<=0) delete s.items[dg.def.id]; }
+      s.dungeonClear[dg.def.id]=true;
+      log("【副本通關】"+dg.def.title+"！獲得靈石 +"+rw.stones+"、肝晶 +"+rw.shards+"、經驗 +"+rw.xp);
+      gainXp(rw.xp);
+      rewardText="\n\n獲得：靈石 +"+rw.stones+"｜經驗 +"+rw.xp+"｜肝晶 +"+rw.shards+"\n（「"+dg.def.ticket+"」已消耗）";
+      save();
+    }
+    dgShowText(dg.def.owner, n.text+rewardText);
+    dgActions([["離開副本", exitDungeon]]);
+  }
+}
+function dgBlog(msg){
+  var el=document.getElementById("dg-blog");
+  dg.blog.unshift(msg); if(dg.blog.length>4) dg.blog.pop();
+  el.innerHTML=dg.blog.map(function(x){ return "<div>"+x+"</div>"; }).join("");
+}
+function renderBattleBars(){
+  var b=dg.battle;
+  document.getElementById("dg-ehp").style.width=Math.max(0,b.ehp/b.emax*100)+"%";
+  document.getElementById("dg-ehp-val").textContent=Math.max(0,b.ehp)+" / "+b.emax;
+  document.getElementById("dg-php").style.width=Math.max(0,b.hp/b.max*100)+"%";
+  document.getElementById("dg-php-val").textContent=Math.max(0,b.hp)+" / "+b.max;
+}
+function startDgBattle(n){
+  var php=40+s.lv*4+dg.mods.php;
+  var ehp=Math.max(20, Math.round(n.enemy.hp*(1-dg.mods.ehp/100)));
+  dg.battle={ n:n, hp:php, max:php, ehp:ehp, emax:ehp, guard:false, skillUsed:false };
+  dg.blog=[];
+  document.getElementById("dg-battle-panel").style.display="block";
+  document.getElementById("dg-ehead").src=enemyIcon(n.enemy);
+  document.getElementById("dg-ename").textContent=n.enemy.name;
+  document.getElementById("dg-phead").src=playerAvatar();
+  document.getElementById("dg-pname").textContent=(s.name||"你")+"（"+(s.school||"社畜")+"）";
+  renderBattleBars();
+  dgShowText("player", "「"+n.enemy.name+"」擋在面前！戰鬥開始！");
+  dgBlog("戰鬥開始！"+(dg.mods.ehp>0?"（劇情加成：敵方氣勢已被削弱）":""));
+  battleMenu();
+}
+function battleMenu(){
+  var b=dg.battle;
+  var sk=SCHOOL_SKILLS[s.school]||SCHOOL_SKILLS["爆肝系"];
+  var btns=[
+    ["攻擊", function(){ playerAct("atk"); }],
+    [b.skillUsed?"（流派技已用）":"流派技・"+sk.name, function(){ if(!b.skillUsed) playerAct("skill"); }],
+    ["擲骰命運", function(){ playerAct("dice"); }],
+    ["防禦", function(){ playerAct("guard"); }]
+  ];
+  dgActions(btns);
+}
+function playerAct(kind){
+  var b=dg.battle, n=b.n;
+  var base=8+Math.floor(s.lv/2);
+  if(kind==="atk"){
+    var d=base+Math.floor(Math.random()*5);
+    b.ehp-=d;
+    dgBlog("你發動攻擊，造成 "+d+" 點傷害！");
+  } else if(kind==="skill"){
+    b.skillUsed=true;
+    var sk=SCHOOL_SKILLS[s.school]||SCHOOL_SKILLS["爆肝系"];
+    var d2=Math.round((base+2)*2.2);
+    b.ehp-=d2;
+    dgBlog(sk.line+"（"+d2+" 點傷害！）");
+  } else if(kind==="dice"){
+    var roll=1+Math.floor(Math.random()*6);
+    if(roll===1){ b.hp-=6; dgBlog("骰出 1……骰子之神背過身去，你被自己的手滑打中（-6 HP）。"); }
+    else if(roll===6){ b.ehp-=22; dgBlog("骰出 6！命運暴擊！造成 22 點傷害！！"); }
+    else { var d3=6+roll*2; b.ehp-=d3; dgBlog("骰出 "+roll+"，命運之力造成 "+d3+" 點傷害！"); }
+  } else if(kind==="guard"){
+    b.guard=true;
+    b.hp=Math.min(b.max, b.hp+5);
+    dgBlog("你擺出防禦姿態，順便深呼吸回復了 5 點 HP。");
+  }
+  renderBattleBars();
+  if(b.ehp<=0){
+    dgBlog("敵方倒下了！勝利！");
+    dgShowText("player", "（戰鬥勝利！）");
+    dgActions([["繼續 ▼", function(){ runNode(n.win); }]]);
+    return;
+  }
+  var ed=n.enemy.atk[0]+Math.floor(Math.random()*(n.enemy.atk[1]-n.enemy.atk[0]+1));
+  if(b.guard){ ed=Math.max(1, Math.round(ed*0.4)); b.guard=false; }
+  b.hp-=ed;
+  dgBlog(pickLine(n.enemy.quips)+"（你受到 "+ed+" 點傷害）");
+  renderBattleBars();
+  if(b.hp<=0){
+    dgShowText("player", "（你的鬥志歸零，眼前一黑……）");
+    dgActions([["繼續 ▼", function(){ runNode(n.lose); }]]);
+    return;
+  }
+  battleMenu();
+}
+document.getElementById("dg-retreat").addEventListener("click", function(){
+  if(confirm("確定撤退嗎？副本進度不保留，但道具不會消耗。")) exitDungeon();
+});
+
+document.getElementById("btn-roster").addEventListener("click", openRoster);
+document.getElementById("roster-close").addEventListener("click", function(){ document.getElementById("roster-overlay").style.display="none"; });
+document.getElementById("roster-overlay").addEventListener("click", function(e){ if(e.target===this) this.style.display="none"; });
+
+/* ---------- commands ---------- */
+function runCmd(txt){
+  txt=txt.trim(); if(!txt) return;
+  if(!s.introDone){ log("請先完成入職流程。"); return; }
+  regen();
+  if(txt.indexOf("去")===0){
+    var d=txt.slice(1);
+    if(LOCS[d]) move(d); else log("找不到「"+d+"」。可以去：工位、會議室、餐廳、茶水間、頂樓");
+    render(); save(); return;
+  }
+  if(txt==="上班" && s.school==="外包系"){ work(false); render(); save(); return; }
+  var found=null;
+  ACTIONS[s.loc].forEach(function(a){ if(a.cmd===txt) found=a; });
+  if(found){ found.run(); }
+  else {
+    var el=null;
+    Object.keys(ACTIONS).forEach(function(k){ ACTIONS[k].forEach(function(a){ if(a.cmd===txt) el=k; }); });
+    if(el) log("這裡不能「"+txt+"」，要先「去"+el+"」。");
+    else log("看不懂的指令。試試：上班、開會、吃飯、喝咖啡、發呆、突破，或「去餐廳」。");
+  }
+  render(); save();
+}
+document.getElementById("btn-cmd").addEventListener("click", function(){ var i=document.getElementById("cmd-input"); runCmd(i.value); i.value=""; });
+document.getElementById("cmd-input").addEventListener("keydown", function(e){ if(e.key==="Enter"){ runCmd(this.value); this.value=""; } });
+
+/* ---------- intro & tutorial ---------- */
+function tutorialSeq(){
+  return [
+    {who:"saika", text:"複習一下～上面的按鈕可以在辦公室移動，每個地點能做的事不一樣：工位上班、餐廳回體力、茶水間降心魔、頂樓放空、會議室……開會。"},
+    {who:"saika", text:"行動消耗「體力」，體力隨現實時間恢復（目前示範速度：每 "+REGEN_SEC+" 秒 +1）。累了就關掉頁面去休息，回來我會把恢復的體力補給你。"},
+    {who:"saika", text:"上班累積「修為」和「靈石」，也會累積「心魔」。心魔太重，突破就容易失敗。修為滿了之後，到工位提交升遷簽呈——審核的人是外包人事妮露，祝你好運。"},
+    {who:"saika", text:"行動也會累積「經驗」，經驗滿了自動升級——體力上限和薪資都會變高，還會解鎖特殊能力，例如「一頁式簡報術」能讓開會省一半體力。"},
+    {who:"saika", text:"還有，阿慶主管每三小時會發一次「派工任務」，逾期會被怪物集團的稽核記心魔……上班就是這樣，你懂的。"},
+    {who:"saika", text:"賺到的靈石可以到右上角「福利社」花掉——抽裝備轉蛋、每日免費儲值（真的不用錢）。抽到的領帶、鍵盤在「裝備」介面穿上還能強化，+9 領帶是本公司的浪漫。"},
+    {who:"saika", text:"也可以直接在下面的指令框打字，例如「去餐廳」「吃飯」。想換識別證上的大頭照，點自己的頭像就行。就這樣，有問題到餐廳找我！"}
+  ];
+}
+function startIntro(){
+  s.loc="餐廳";
+  say([
+    {who:"saika", text:"歡迎光臨「四季的味」——啊，不對。這裡是任務據點，歡迎入職！"},
+    {who:"saika", text:"我是彩花，表面上是接待人員，實際上是戰場清掃忍者。你的入職文件……三秒，處理好了。"},
+    {who:"saika", text:"請問道友怎麼稱呼？", input:true},
+    {who:"saika", text:function(){ return s.name+"道友，好名字。順便交一張大頭照吧，我幫你做員工識別證。沒帶也沒關係，之後點自己的頭像隨時能補交。"; }, upload:true},
+    {who:"saika", text:"識別證搞定！接下來是入職測驗——阿慶主管，人呢？"},
+    {who:"aqing", text:"來了來了……唉，等下還要跟老闆開會。這杯是公司咖啡，雙手握住，運轉你的社畜之氣——這叫「水見式」。"},
+    {who:"aqing", text:function(){
+      var k=rollSchool(); s.school=k;
+      return "哦？"+SCHOOLS[k].test;
+    }},
+    {who:"aqing", text:function(){
+      var sc=SCHOOLS[s.school];
+      questDone("test");
+      return "你是「"+s.school+"」（"+sc.orig+"）——"+sc.perk+"。以後就靠這個混……靠這個發展了。我先去開會，886。";
+    }}
+  ].concat(tutorialSeq()).concat([
+    {who:"saika", text:function(){ s.introDone=true; s.met.saika=true; s.met.aqing=true; s.lastTaskTs=Date.now()-TASK_INTERVAL_MS; s.lastLoginDay=new Date().toDateString(); save(); return "入職完成！右上角的「人物名冊」可以查看認識的人——多跟大家聊天，會聽到很多故事喔。打完了？剩下交給我——三秒，乾淨如新。"; }}
+  ]), function(){ render(); save(); });
+}
+function welcomeBack(recovered){
+  var extra = recovered>0 ? "你不在的這段時間，體力恢復了 "+recovered+" 點。" : "";
+  var seq=[{who:"saika", text:"歡迎回來，"+s.name+"道友。"+extra+"今天也用心款待每一位客人……和每一位社畜。"}];
+  if(window.STORYDATA && STORYDATA.WELCOME_LINES){
+    seq.push({who:"saika", text:pickLine(STORYDATA.WELCOME_LINES)});
+  }
+  var today=new Date().toDateString();
+  if(s.lastLoginDay && s.lastLoginDay!==today && window.STORYDATA){
+    s.met.boss=true;
+    var sp=STORYDATA.BOSS_SPEECHES[Math.floor(Math.random()*STORYDATA.BOSS_SPEECHES.length)];
+    seq.push({who:"saika", text:"啊，對了——老闆有今日訓話。全體肅立～（沒有人站起來）"});
+    seq.push({who:"boss", text:"【今日訓話】"+sp});
+  }
+  s.lastLoginDay=today; save();
+  say(seq);
+}
+document.getElementById("btn-tut").addEventListener("click", function(){ if(s.introDone) say(tutorialSeq()); });
+document.getElementById("btn-save").addEventListener("click", function(){
+  var code;
+  try{ code=btoa(unescape(encodeURIComponent(JSON.stringify(s)))); }catch(e){ log("存檔碼產生失敗。"); return; }
+  var input=window.prompt("你的存檔碼（全選複製即可備份到別台裝置）。\n要「匯入」存檔：清空欄位、貼上別的存檔碼後按確定。", code);
+  if(input && input.trim() && input.trim()!==code){
+    try{
+      var d=JSON.parse(decodeURIComponent(escape(atob(input.trim()))));
+      if(d && d.name && d.introDone!==undefined){ localStorage.setItem(SAVE_KEY, JSON.stringify(d)); location.reload(); }
+      else log("存檔碼內容不完整，未匯入。");
+    }catch(e){ log("存檔碼讀取失敗，未匯入。"); }
+  }
+});
+document.getElementById("p-avatar").addEventListener("click", function(){
+  if(!s.introDone) return;
+  pickAvatar(function(){ say([{who:"saika", text:"識別證更新完成！打完了？剩下交給我——三秒，乾淨如新。"}]); });
+});
+document.getElementById("btn-reset").addEventListener("click", function(){
+  if(confirm("確定要離職重來嗎？所有進度將會消失。")){ localStorage.removeItem(SAVE_KEY); location.reload(); }
+});
+
+/* ---------- boot ---------- */
+(function boot(){
+  var d=load();
+  if(d && d.name && d.introDone){
+    s=d;
+    if(s.xp===undefined){ s.xp=0; s.lv=1; s.met={saika:true, aqing:true}; s.task=null; s.lastTaskTs=Date.now()-TASK_INTERVAL_MS; }
+    if(s.chat===undefined){ s.chat={}; s.files={}; s.help=null; s.helpDone={}; s.story=0; s.lastLoginDay=""; }
+    if(s.gear===undefined){
+      s.gear={}; s.equip={tie:null,kb:null,chair:null,mug:null}; s.shards=0; s.pulls=0;
+      s.rechargeCount=0; s.lastRechargeDay=""; s.shopChatG=0; s.shopChatN=0;
+    }
+    if(s.storyDone===undefined){
+      s.storyDone={};
+      for(var si=0; si<(s.story||0); si++) s.storyDone[si]=true;
+    }
+    if(s.items===undefined){
+      s.items={}; s.dungeonClear={};
+      if(window.DUNGEONS){
+        Object.keys(DUNGEONS).forEach(function(k){
+          if(DUNGEONS[k].lv<=s.lv){ s.items[k]=1; }
+        });
+        if(Object.keys(s.items).length) log("【獲得道具】掌門們留了幾樣東西給你——到「裝備與道具」看看吧。");
+      }
+    }
+    var before=s.sta;
+    regen();
+    render();
+    log("讀取存檔成功。");
+    welcomeBack(Math.round(s.sta-before));
+  } else {
+    s=freshState();
+    render();
+    startIntro();
+  }
+  setInterval(function(){ regen(); checkTask(); checkStory(); render(); }, 1000);
+})();
+</script>
+</body>
+</html>
