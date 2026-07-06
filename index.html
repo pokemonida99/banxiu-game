@@ -138,6 +138,7 @@ header .sub { font-size: 12px; color: #8a7f6a; }
       <button class="hbtn" id="btn-shop">福利社</button>
       <button class="hbtn" id="btn-gear">裝備與道具</button>
       <button class="hbtn" id="btn-roster">人物名冊</button>
+      <button class="hbtn" id="btn-bulletin">公告欄</button>
       <button class="hbtn" id="btn-tut">教學</button>
       <button class="hbtn" id="btn-save">存檔碼</button>
       <button class="hbtn" id="btn-reset">重新入職</button>
@@ -258,6 +259,16 @@ header .sub { font-size: 12px; color: #8a7f6a; }
   </div>
 </div>
 
+<div id="bulletin-overlay" style="position:fixed; inset:0; background:rgba(5,4,2,.7); display:none; z-index:60;">
+  <div style="position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); width:min(720px,94vw); max-height:86vh; overflow-y:auto; background:#1f1b16; border:2px solid #c9a54e; border-radius:12px; padding:16px 20px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h2 style="font-size:18px; color:#c9a54e; letter-spacing:2px;">公司公告欄</h2>
+      <button class="hbtn" id="bulletin-close">關閉</button>
+    </div>
+    <div id="bulletin-list"></div>
+  </div>
+</div>
+
 <div id="dungeon-overlay">
   <div id="dg-box">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
@@ -340,9 +351,25 @@ var CHARS = {
   ajie:   { name:"阿傑", title:"設計巫師・簡報系掌門", img:"img/avatar/ajie.jpg" },
   niru:   { name:"妮露", title:"外包人事・怪物集團", img:"img/avatar/niru.jpg" },
   goro:   { name:"葛羅", title:"KPI 稽核・怪物集團", img:"img/avatar/goro.jpg" },
-  boss:   { name:"老闆", title:"創辦人・？？？", img:"img/avatar/boss.jpg" }
+  boss:   { name:"老闆", title:"創辦人・？？？", img:"img/avatar/boss.jpg" },
+  rookie: { name:"阿呆", title:"菜鳥・練氣期實習生", img:"" },
+  narrate:{ name:"旁白", title:"", img:"" }
 };
 var ROSTER_ORDER = ["saika","aqing","adi","komi","xiaoyan","ajie","niru","goro","boss"];
+/* 阿呆／旁白沒有底圖，用 canvas 產生文字頭像 */
+(function(){
+  function tile(ch, bg, fg){
+    try{
+      var c=document.createElement("canvas"); c.width=c.height=200; var g=c.getContext("2d");
+      g.fillStyle=bg; g.fillRect(0,0,200,200);
+      g.fillStyle=fg; g.font="bold 104px 'Noto Sans TC',sans-serif";
+      g.textAlign="center"; g.textBaseline="middle"; g.fillText(ch,100,112);
+      return c.toDataURL();
+    }catch(e){ return "img/avatar/boss.jpg"; }
+  }
+  CHARS.rookie.img=tile("呆","#4a5a3a","#e8dcc0");
+  CHARS.narrate.img=tile("旁","#242019","#8a7f6a");
+})();
 function fmt(t){ return String(t).split("{name}").join(s && s.name ? s.name : "道友"); }
 
 var NPC_LINES = {
@@ -405,7 +432,7 @@ function freshState(){
            chat:{}, files:{}, help:null, helpDone:{}, story:0, lastLoginDay:"",
            gear:{}, equip:{tie:null,kb:null,chair:null,mug:null}, shards:0, pulls:0,
            rechargeCount:0, lastRechargeDay:"", shopChatG:0, shopChatN:0, storyDone:{},
-           items:{}, dungeonClear:{}, rel:{}, eventsSeen:{} };
+           items:{}, dungeonClear:{}, rel:{}, eventsSeen:{}, epilogue:{}, seasonalDone:{}, trials:{}, villainDone:{} };
 }
 function relOf(id){
   if(!s.rel[id]) s.rel[id]={ met:false, fav:0, stage:0, dating:false, brokeUp:false, deep:{}, late:{}, banter:0 };
@@ -579,6 +606,7 @@ function next(){
   var ch = dcur.who==="player"
     ? { name:(s.name||"你"), title:"社畜修士", img:playerAvatar() }
     : CHARS[dcur.who];
+  if(!ch) ch={ name:String(dcur.who), title:"", img:(CHARS.narrate?CHARS.narrate.img:"") };
   document.getElementById("dlg-avatar").src=ch.img;
   document.getElementById("dlg-name").childNodes[0].nodeValue=ch.name;
   document.getElementById("dlg-title").textContent=ch.title;
@@ -638,7 +666,27 @@ var goodEvents=[
   function(){ s.sta=Math.min(maxSta(),s.sta+15); log("彩花偷偷多給你一塊唐揚雞。體力 +15"); },
   function(){ s.qi+=15; log("IT 部悄悄幫你換了新滑鼠墊，手感 +1。修為 +15"); },
   function(){ heal(12); log("小燕在會議上一句話幫全組擋掉一個新需求。你隔空感到心魔下降。"); },
-  function(){ s.stones+=25; log("自動販賣機多掉了一罐咖啡。你抬頭看了看監視器，它眨了眨。靈石 +25"); }
+  function(){ s.stones+=25; log("自動販賣機多掉了一罐咖啡。你抬頭看了看監視器，它眨了眨。靈石 +25"); },
+  function(){ s.stones+=35; log("阿慶頒你一張「精神股東獎狀」，附贈裱框費。靈石 +35"); },
+  function(){ heal(14); log("彩花默默在你桌上放了一碗湯，多蔥。心魔下降。"); },
+  function(){ s.qi+=25; log("咖啡機的嗡鳴裡，你忽然參透一段卡了三天的 code。修為 +25"); },
+  function(){ s.sta=Math.min(maxSta(),s.sta+18); log("阿低幫你把椅子調到人體工學角度。體力 +18"); },
+  function(){ s.stones+=50; log("報帳系統破天荒秒過，你懷疑是妮露手滑。靈石 +50"); },
+  function(){ heal(10); log("小燕在會議上一句話幫你擋下一個新需求。心魔下降。"); },
+  function(){ s.qi+=18; log("阿傑替你把簡報字距調到完美，客戶一次過。修為 +18"); },
+  function(){ s.stones+=30; log("頂樓空椅子旁有人留了 30 靈石與紙條「請你喝咖啡」。"); },
+  function(){ s.sta=Math.min(maxSta(),s.sta+12); log("葛羅偷補的零食櫃，你搶到最後一包唐揚雞洋芋片。體力 +12"); },
+  function(){ heal(12); log("老闆的黑頭像在群組回了你一個讚。莫名安心，心魔下降。"); },
+  function(){ s.qi+=15; log("排骨飯今天沒當機，系統穩得像在誦經。修為 +15"); },
+  function(){ s.stones+=28; log("你在影印機夾層撿到 28 靈石，招領三天沒人認，歸你。"); },
+  function(){ heal(15); log("小米幫你淨化了一通奧客電話的餘波。心魔大幅下降。"); },
+  function(){ s.qi+=22; log("你把一個手動流程自動化了，每天省下半小時。修為 +22"); },
+  function(){ s.sta=Math.min(maxSta(),s.sta+15); log("滷肉飯從阿低老家傳來一個健康心跳包，你也跟著精神了。體力 +15"); },
+  function(){ s.stones+=40; log("尾牙抽獎補發，你中了「特休半天折現」。靈石 +40"); },
+  function(){ heal(8); log("阿慶請全組喝手搖，續命成功。心魔下降。"); },
+  function(){ s.qi+=12; log("你幫菜鳥解了一個 bug，教學相長。修為 +12"); },
+  function(){ s.stones+=33; log("妮露的簽核章這次蓋在你的加班「補休」上。靈石 +33"); },
+  function(){ s.sta=Math.min(maxSta(),s.sta+20); log("你準時下班了。就這麼簡單。體力大幅回復。"); }
 ];
 function villainGoro(){
   s.demon+=10; s.met.goro=true;
@@ -656,6 +704,16 @@ var badEvents=[
   function(){ s.demon+=5; log("電梯裡有人把八層樓全按了。心魔 +5"); },
   function(){ s.demon+=7; log("「在嗎？」——訊息只有這兩個字，然後對方消失了四十分鐘。心魔 +7"); },
   function(){ s.qi=Math.max(0,s.qi-10); log("你的午餐被吃了，便當盒上貼著「借一下」。修為 -10，因為這種事悟不了。"); },
+  function(){ s.demon+=10; log("客戶把檔案命名為「最終版_真的最終_這次真的.docx」。心魔 +10"); },
+  function(){ s.qi=Math.max(0,s.qi-12); log("你被拉進一個「只要五分鐘」的會，出來時天黑了。修為 -12"); },
+  function(){ s.demon+=8; log("群組有人 @所有人，只為了說「收到」。心魔 +8"); },
+  function(){ s.demon+=6; log("你的椅子被借去開會，回來高度全被改了。心魔 +6"); },
+  function(){ s.qi=Math.max(0,s.qi-10); log("排骨飯半夜當機，你被 call 起來重開。修為 -10"); },
+  function(){ s.demon+=9; log("你精心寫的報告，主管只看標題就轉發了。心魔 +9"); },
+  function(){ s.demon+=7; log("冷氣公投又沒共識，你這排今天是寒潭。心魔 +7"); },
+  function(){ s.qi=Math.max(0,s.qi-8); log("印表機卡紙，你蹲下去修，膝蓋先渡劫了。修為 -8"); },
+  function(){ s.demon+=11; log("葛羅的 KPI 儀表板今天全紅，他呵呵呵地看著你。心魔 +11"); },
+  function(){ s.demon+=5; log("電梯每層都停，像在幫你數樓層冥想。心魔 +5"); },
   villainGoro, villainNiru
 ];
 function maybeScene(cmd){
@@ -801,6 +859,13 @@ function render(){
     d.onclick=function(){ talkTo(id); };
     nr.appendChild(d);
   });
+  /* 帶新人：元嬰（r>=3）之後，工位出現菜鳥阿呆 */
+  if(s.loc==="工位" && s.r>=3 && CHARS.rookie){
+    var dr=document.createElement("div"); dr.className="npc";
+    dr.innerHTML='<img src="'+CHARS.rookie.img+'" alt="阿呆" style="border-color:#8a9a6a"><span>阿呆</span>';
+    dr.onclick=function(){ talkTo("rookie"); };
+    nr.appendChild(dr);
+  }
   if(window.ROMANCE && ROM_LOC[s.loc]){
     ROM_LOC[s.loc].forEach(function(id){
       var H=ROMANCE.HEROINES[id], r=relOf(id);
@@ -894,6 +959,12 @@ function render(){
 }
 
 function talkTo(id){
+  /* 飛升後日談：r>=5 後，每位同事播一次告別 */
+  if(s.r>=5 && window.STORYDATA && STORYDATA.EPILOGUE && STORYDATA.EPILOGUE[id] && !s.epilogue[id]){
+    s.epilogue[id]=true; save();
+    say(STORYDATA.EPILOGUE[id].map(function(l){ return {who:l[0], text:fmt(l[1])}; }));
+    return;
+  }
   var eps = window.STORYDATA && STORYDATA.CHATS[id];
   var epIdx = s.chat[id]||0;
   if(eps && epIdx < eps.length){
@@ -1536,6 +1607,27 @@ function playChapter(id, key, i){
 function openRomance(id){
   romHeroine=id;
   var H=ROMANCE.HEROINES[id], r=relOf(id);
+  /* 節日事件（交往中）：七夕／聖誕依系統日期、生日依好感里程碑，每人每節一次 */
+  if(window.ROMANCE.FESTIVALS && r.dating){
+    var today=new Date(), fkeys=Object.keys(ROMANCE.FESTIVALS);
+    for(var fi=0;fi<fkeys.length;fi++){
+      var F=ROMANCE.FESTIVALS[fkeys[fi]], seenKey="fest_"+fkeys[fi]+"_"+id;
+      if(s.eventsSeen[seenKey] || !F.perChar || !F.perChar[id]) continue;
+      var hit = F.month ? (today.getMonth()+1===F.month && today.getDate()===F.day)
+                        : (r.fav>=100);
+      if(hit){
+        s.eventsSeen[seenKey]=true; save();
+        romSay(F.perChar[id].map(function(l){ return [l[0], l[1]]; }), romCloseToPanel);
+        return;
+      }
+    }
+  }
+  /* 分手後餘韻：每人一次 */
+  if(window.ROMANCE.AFTERMATH && r.brokeUp && ROMANCE.AFTERMATH[id] && !s.eventsSeen["after_"+id]){
+    s.eventsSeen["after_"+id]=true; save();
+    romSay(ROMANCE.AFTERMATH[id].map(function(l){ return [l[0], l[1]]; }), romCloseToPanel);
+    return;
+  }
   document.getElementById("rom-full").style.display="none";
   document.getElementById("rom-title").textContent="◆ "+H.name;
   document.getElementById("rom-hud").style.display="flex";
@@ -1603,6 +1695,33 @@ function interactHeroine(id){
 }
 document.getElementById("rom-close").addEventListener("click", function(){ document.getElementById("rom-overlay").style.display="none"; render(); });
 /* 隨機吃醋／八卦事件 */
+/* ---------- 公司自動事件佇列（四季活動／掌門試煉／反派支線共用） ---------- */
+function runCompanyQueue(list, done, tag){
+  if(!list) return;
+  if(document.getElementById("dlg-overlay").style.display==="block") return;
+  for(var i=0;i<list.length;i++){
+    if(done[i]) continue;
+    var ev=list[i], need=ev.need||{};
+    if(need.lv!==undefined && s.lv<need.lv) continue;
+    if(need.r!==undefined && s.r<need.r) continue;
+    done[i]=true;
+    ev.lines.forEach(function(l){ if(CHARS[l[0]] && l[0]!=="player") s.met[l[0]]=true; });
+    var reward=ev.reward||0, title=ev.title;
+    say(ev.lines.map(function(l){ return {who:l[0], text:fmt(l[1])}; }), function(){
+      s.stones+=reward; log(tag+"「"+title+"」完成，獲得靈石 +"+reward); save(); render();
+    });
+    return;
+  }
+}
+function checkSeasonal(){
+  if(!s.introDone || !window.STORYDATA) return;
+  if(!s.seasonalDone) s.seasonalDone={};
+  if(!s.trials) s.trials={};
+  if(!s.villainDone) s.villainDone={};
+  runCompanyQueue(STORYDATA.SEASONAL, s.seasonalDone, "【公司活動】");
+  runCompanyQueue(STORYDATA.TRIALS, s.trials, "【掌門試煉】");
+  runCompanyQueue(STORYDATA.VILLAIN, s.villainDone, "【職場觀察】");
+}
 function checkRomEvent(){
   if(!s.introDone || !window.ROMANCE) return;
   if(document.getElementById("dlg-overlay").style.display==="block") return;
@@ -1614,6 +1733,8 @@ function checkRomEvent(){
     if(s.eventsSeen[e.id]) return false;
     if(e.need.any) return anyMet;
     if(e.need.dating) return datingList.indexOf(e.need.dating)>=0;
+    if(e.need.datingCount) return datingList.length>=e.need.datingCount;
+    if(e.need.brokeUp) return s.rel[e.need.brokeUp] && s.rel[e.need.brokeUp].brokeUp;
     return false;
   });
   if(!pool.length) return;
@@ -1628,6 +1749,24 @@ function checkRomEvent(){
 }
 
 
+function openBulletin(){
+  var box=document.getElementById("bulletin-list");
+  var B=(window.STORYDATA && STORYDATA.BULLETIN) || [];
+  var unlocked=Math.min(B.length, 4 + (s.lv||1));   /* 隨等級陸續解鎖更多公告 */
+  var html="";
+  for(var i=unlocked-1;i>=0;i--){
+    var p=B[i];
+    html+='<div style="border-bottom:1px solid #3d3423; padding:10px 2px;">'
+        + '<div style="color:#e8c96a; font-weight:bold; margin-bottom:4px;">#'+p.no+'　'+fmt(p.title)+'</div>'
+        + '<div style="color:#c8bda6; font-size:14px; line-height:1.75; white-space:pre-wrap;">'+fmt(p.body)+'</div></div>';
+  }
+  if(!html) html='<div style="color:#8a7f6a;">目前還沒有公告。在公司待久一點，公告欄就會熱鬧起來。</div>';
+  box.innerHTML=html;
+  document.getElementById("bulletin-overlay").style.display="block";
+}
+document.getElementById("btn-bulletin").addEventListener("click", openBulletin);
+document.getElementById("bulletin-close").addEventListener("click", function(){ document.getElementById("bulletin-overlay").style.display="none"; });
+document.getElementById("bulletin-overlay").addEventListener("click", function(e){ if(e.target===this) this.style.display="none"; });
 document.getElementById("btn-roster").addEventListener("click", openRoster);
 document.getElementById("roster-close").addEventListener("click", function(){ document.getElementById("roster-overlay").style.display="none"; });
 document.getElementById("roster-overlay").addEventListener("click", function(e){ if(e.target===this) this.style.display="none"; });
@@ -1754,6 +1893,8 @@ document.getElementById("btn-reset").addEventListener("click", function(){
       }
     }
     if(s.rel===undefined){ s.rel={}; s.eventsSeen={}; }
+    if(s.epilogue===undefined){ s.epilogue={}; s.seasonalDone={}; }
+    if(s.trials===undefined){ s.trials={}; s.villainDone={}; }
     var before=s.sta;
     regen();
     render();
@@ -1764,7 +1905,7 @@ document.getElementById("btn-reset").addEventListener("click", function(){
     render();
     startIntro();
   }
-  setInterval(function(){ regen(); checkTask(); checkStory(); checkRomEvent(); render(); }, 1000);
+  setInterval(function(){ regen(); checkTask(); checkStory(); checkSeasonal(); checkRomEvent(); render(); }, 1000);
 })();
 </script>
 </body>
