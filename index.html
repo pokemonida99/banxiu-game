@@ -353,7 +353,7 @@ header .sub { font-size: 12px; color: #8a7f6a; }
 <script src="romance.js"></script>
 <script>
 "use strict";
-var GAME_VER = "v2.1.0（2026-07-06）";   /* 版本號：改版時更新這裡即可 */
+var GAME_VER = "v2.1.1（2026-07-07）";   /* 版本號：改版時更新這裡即可 */
 var REGEN_SEC = 5, DEMO = true;
 var TASK_INTERVAL_MS = 3*3600*1000, TASK_DURATION_MS = 3*3600*1000;
 var SAVE_KEY = "banxiu_save_v1";
@@ -462,7 +462,12 @@ function freshState(){
 }
 function relOf(id){
   if(!s.rel[id]) s.rel[id]={ met:false, fav:0, stage:0, dating:false, brokeUp:false, deep:{}, late:{}, banter:0 };
-  return s.rel[id];
+  var r=s.rel[id];
+  if(!r.deep) r.deep={};
+  if(!r.late) r.late={};
+  if(r.fav===undefined) r.fav=0;
+  if(r.stage===undefined) r.stage=0;
+  return r;
 }
 function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(s)); }catch(e){} }
 function load(){ try{ var d=localStorage.getItem(SAVE_KEY); return d?JSON.parse(d):null; }catch(e){ return null; } }
@@ -1113,6 +1118,7 @@ function progressCmd(cmd){ taskProg(cmd); helpProg(cmd); }
 function checkStory(){
   if(!s.introDone || !window.STORYDATA) return;
   if(document.getElementById("dlg-overlay").style.display==="block") return;
+  if(document.getElementById("rom-overlay").style.display==="block") return;
   var idx=-1;
   for(var i=0;i<STORYDATA.STORY.length;i++){
     if(s.storyDone[i]) continue;
@@ -1693,6 +1699,7 @@ function playChapter(id, key, i){
 function openRomance(id){
   romHeroine=id;
   var H=ROMANCE.HEROINES[id], r=relOf(id);
+  document.getElementById("rom-overlay").style.display="block";   /* 修復：面板重開（原版漏掉，導致見面後再點沒反應） */
   /* 節日事件（交往中）：七夕／聖誕依系統日期、生日依好感里程碑，每人每節一次 */
   if(window.ROMANCE.FESTIVALS && r.dating){
     var today=new Date(), fkeys=Object.keys(ROMANCE.FESTIVALS);
@@ -1785,6 +1792,7 @@ document.getElementById("rom-close").addEventListener("click", function(){ docum
 function runCompanyQueue(list, done, tag){
   if(!list) return;
   if(document.getElementById("dlg-overlay").style.display==="block") return;
+  if(document.getElementById("rom-overlay").style.display==="block") return;
   for(var i=0;i<list.length;i++){
     if(done[i]) continue;
     var ev=list[i], need=ev.need||{};
