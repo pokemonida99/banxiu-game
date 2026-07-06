@@ -132,13 +132,14 @@ header .sub { font-size: 12px; color: #8a7f6a; }
   <header>
     <div>
       <h1>上班修仙傳</h1>
-      <div class="sub">練氣不如練肝，飛升不如下班</div>
+      <div class="sub">練氣不如練肝，飛升不如下班<span id="game-ver" style="margin-left:8px; font-size:10px; color:#5f584a;"></span></div>
     </div>
     <div>
       <button class="hbtn" id="btn-shop">福利社</button>
       <button class="hbtn" id="btn-gear">裝備與道具</button>
       <button class="hbtn" id="btn-roster">人物名冊</button>
       <button class="hbtn" id="btn-bulletin">公告欄</button>
+      <button class="hbtn" id="btn-phone" style="display:none">手機</button>
       <button class="hbtn" id="btn-tut">教學</button>
       <button class="hbtn" id="btn-save">存檔碼</button>
       <button class="hbtn" id="btn-reset">重新入職</button>
@@ -259,6 +260,20 @@ header .sub { font-size: 12px; color: #8a7f6a; }
   </div>
 </div>
 
+<div id="phone-overlay" style="position:fixed; inset:0; background:rgba(5,4,2,.7); display:none; z-index:60;">
+  <div style="position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); width:min(420px,94vw); max-height:86vh; display:flex; flex-direction:column; background:#141414; border:2px solid #3a3a3a; border-radius:18px; padding:12px 14px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <h2 style="font-size:16px; color:#eee; letter-spacing:2px;">📱 手機</h2>
+      <button class="hbtn" id="phone-close">關閉</button>
+    </div>
+    <div style="display:flex; gap:8px; margin-bottom:8px;">
+      <button class="gbtn" id="phone-tab-wall">動態牆</button>
+      <button class="gbtn" id="phone-tab-chat">聊天室</button>
+    </div>
+    <div id="phone-body" style="overflow-y:auto; flex:1; min-height:220px; max-height:58vh;"></div>
+  </div>
+</div>
+
 <div id="bulletin-overlay" style="position:fixed; inset:0; background:rgba(5,4,2,.7); display:none; z-index:60;">
   <div style="position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); width:min(720px,94vw); max-height:86vh; overflow-y:auto; background:#1f1b16; border:2px solid #c9a54e; border-radius:12px; padding:16px 20px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
@@ -338,6 +353,7 @@ header .sub { font-size: 12px; color: #8a7f6a; }
 <script src="romance.js"></script>
 <script>
 "use strict";
+var GAME_VER = "v2.1.0（2026-07-06）";   /* 版本號：改版時更新這裡即可 */
 var REGEN_SEC = 5, DEMO = true;
 var TASK_INTERVAL_MS = 3*3600*1000, TASK_DURATION_MS = 3*3600*1000;
 var SAVE_KEY = "banxiu_save_v1";
@@ -369,6 +385,15 @@ var ROSTER_ORDER = ["saika","aqing","adi","komi","xiaoyan","ajie","niru","goro",
   }
   CHARS.rookie.img=tile("呆","#4a5a3a","#e8dcc0");
   CHARS.narrate.img=tile("旁","#242019","#8a7f6a");
+})();
+/* 女角註冊進 CHARS，讓公司對話引擎 say() 也能顯示她們（出沒系統用） */
+(function(){
+  if(!window.ROMANCE) return;
+  Object.keys(ROMANCE.HEROINES).forEach(function(id){
+    if(CHARS[id]) return;
+    var H=ROMANCE.HEROINES[id];
+    CHARS[id]={ name:H.name, title:H.title, img:H.faces.mid };
+  });
 })();
 function fmt(t){ return String(t).split("{name}").join(s && s.name ? s.name : "道友"); }
 
@@ -432,7 +457,8 @@ function freshState(){
            chat:{}, files:{}, help:null, helpDone:{}, story:0, lastLoginDay:"",
            gear:{}, equip:{tie:null,kb:null,chair:null,mug:null}, shards:0, pulls:0,
            rechargeCount:0, lastRechargeDay:"", shopChatG:0, shopChatN:0, storyDone:{},
-           items:{}, dungeonClear:{}, rel:{}, eventsSeen:{}, epilogue:{}, seasonalDone:{}, trials:{}, villainDone:{} };
+           items:{}, dungeonClear:{}, rel:{}, eventsSeen:{}, epilogue:{}, seasonalDone:{}, trials:{}, villainDone:{},
+           komiCare:0, phoneDay:"", phonePostN:0, phoneLikes:{}, phoneLikeDay:"", phoneThread:{}, phoneGN:"", phoneGNmsg:"" };
 }
 function relOf(id){
   if(!s.rel[id]) s.rel[id]={ met:false, fav:0, stage:0, dating:false, brokeUp:false, deep:{}, late:{}, banter:0 };
@@ -834,12 +860,54 @@ function checkMeet(){
   if(seq.length){ save(); say(seq); }
 }
 
+/* ---------- 角色出沒／漫遊系統 ---------- */
+var roamNow=[], heroAbsent={};
+function rollRoam(){
+  roamNow=[]; heroAbsent={};
+  if(!s) return;
+  if(window.STORYDATA && STORYDATA.ROAM){
+    STORYDATA.ROAM.forEach(function(e){
+      if(e.at===s.loc && Math.random()<e.chance) roamNow.push(e);
+    });
+  }
+  /* 女角不在家：公司外店家 10% 公休；晴晴（拍攝滿檔）見過面後、未交往時 80% 不在 */
+  if(window.ROMANCE && ROM_LOC[s.loc]){
+    ROM_LOC[s.loc].forEach(function(id){
+      if(s.lv < ROMANCE.HEROINES[id].meetLv) return;
+      var r=relOf(id);
+      if(id==="liang"){ if(r.met && !r.dating && Math.random()<0.8) heroAbsent[id]=true; }
+      else if(LOCS[s.loc].outside && r.met && Math.random()<0.10) heroAbsent[id]=true;
+    });
+  }
+}
+function meetRoam(e){
+  var seg=pickLine(e.pool);
+  say(seg.map(function(l){ return {who:l[0], text:fmt(l[1])}; }), function(){
+    if(e.id==="roam_aqing_maid" && !s.eventsSeen.roam_hush){
+      s.eventsSeen.roam_hush=true; s.stones+=30;
+      log("阿慶塞給你 30 靈石：「封口費。這一段，不列入紀錄。」");
+    }
+    if(e.id==="roam_boss_roof"){
+      s.met.boss=true; s.files.boss=Math.max(s.files.boss||0,3);
+      roamNow=roamNow.filter(function(x){ return x!==e; });
+      log("【名冊更新】老闆的檔案多了一頁。頂樓的風，好像剛剛有人坐過。");
+    }
+    if(window.ROMANCE && ROMANCE.HEROINES[e.who]){
+      if(e.who==="komi") s.komiCare=(s.komiCare||0)+1;
+      var r=relOf(e.who);
+      if(r.met && !r.brokeUp){ addFav(e.who,3); log("【偶遇】在"+s.loc+"巧遇"+ROMANCE.HEROINES[e.who].name+"，好感 +3。"); }
+    }
+    save(); render();
+  });
+}
 function move(dest){
   if(dest===s.loc){ log("你已經在"+dest+"了。"); return; }
+  if(LOCS[dest] && LOCS[dest].outside && s.lv<4){ log("公司外的世界，等你 Lv 4 再去探索吧。（現在的你，連午休都不夠用。）"); return; }
   var c=s.school==="外包系"?0:5;
   pay(c, function(){
     s.loc=dest;
     log("你移動到了「"+dest+"」。"+(c===0?"（外包系：移動免體力）":""));
+    rollRoam();
     checkMeet();
   });
 }
@@ -869,14 +937,30 @@ function render(){
   if(window.ROMANCE && ROM_LOC[s.loc]){
     ROM_LOC[s.loc].forEach(function(id){
       var H=ROMANCE.HEROINES[id], r=relOf(id);
+      if(heroAbsent[id]){
+        var note=(window.STORYDATA && STORYDATA.ABSENT_NOTES && STORYDATA.ABSENT_NOTES[id])||"（今日公休）";
+        var dv=document.createElement("div"); dv.className="npc";
+        dv.innerHTML='<div style="width:62px;height:62px;border-radius:50%;border:2px dashed #8a7f6a;background:#242019;display:flex;align-items:center;justify-content:center;color:#8a7f6a;font-size:22px;margin:0 auto;">'+(id==="liang"?"拍":"休")+'</div><span style="color:#8a7f6a">'+H.name+(id==="liang"?"（拍攝中）":"（公休）")+"</span>";
+        dv.onclick=function(){ say([{who:"narrate", text:"（門上貼著字條）"+fmt(note)}]); };
+        nr.appendChild(dv);
+        return;
+      }
       var img = r.met ? H.faces[favTier(r.fav)] : H.faces.low;
       var tag = r.dating ? "♥"+H.name : (id==="komi" ? H.name+"（心動）" : H.name);
       var d=document.createElement("div"); d.className="npc";
-      d.innerHTML='<img src="'+img+'" alt="'+H.name+'" style="border-color:'+(r.dating?"#e08aad":"#c9a54e")+'"><span'+(r.dating?' style="color:#f0b8d0"':'')+'>'+tag+"</span>";
+      d.innerHTML='<img src="'+img+'" alt="'+H.name+'" style="border-color:'+(r.dating?"#e05a8f":"#f2a0c0")+'"><span'+(r.dating?' style="color:#f0b8d0"':'')+'>'+tag+"</span>";
       d.onclick=function(){ interactHeroine(id); };
       nr.appendChild(d);
     });
   }
+  /* 出沒訪客 */
+  roamNow.forEach(function(e){
+    var c=CHARS[e.who]; if(!c || !c.img) return;
+    var dv=document.createElement("div"); dv.className="npc";
+    dv.innerHTML='<img src="'+c.img+'" alt="'+c.name+'" style="border-color:#9a8f78"><span style="color:#c8bda6">'+c.name+"（訪）</span>";
+    dv.onclick=function(){ meetRoam(e); };
+    nr.appendChild(dv);
+  });
   var pa=document.getElementById("p-avatar"), paUrl=playerAvatar();
   if(pa.src!==paUrl) pa.src=paUrl;
   document.getElementById("p-name").textContent=s.name||"（未命名）";
@@ -896,8 +980,10 @@ function render(){
   document.getElementById("qi-val").textContent=last?"圓滿":Math.round(s.qi)+" / "+r.need;
   document.getElementById("demon-bar").style.width=s.demon+"%";
   document.getElementById("demon-val").textContent=Math.round(s.demon)+"%";
+  document.getElementById("btn-phone").style.display=(window.ROMANCE && s.rel.liang && s.rel.liang.met)?"":"none";
   var mr=document.getElementById("move-row"); mr.innerHTML="";
   Object.keys(LOCS).forEach(function(k){
+    if(LOCS[k].outside && s.lv<4) return;   /* 公司外地點 Lv4 才解鎖 */
     var b=document.createElement("button"); b.className="gbtn"+(k===s.loc?" here":"");
     b.textContent=k===s.loc?k+"（目前）":"去"+k+(s.school==="外包系"?"":"（體力 5）");
     b.disabled=!s.introDone;
@@ -1749,6 +1835,108 @@ function checkRomEvent(){
 }
 
 
+/* ---------- 手機（晴晴的主要互動：動態牆＋聊天室） ---------- */
+function phAdd(html){
+  var box=document.getElementById("phone-body");
+  var d=document.createElement("div"); d.innerHTML=html;
+  while(d.firstChild) box.appendChild(d.firstChild);
+  box.scrollTop=box.scrollHeight;
+}
+function phoneBubble(side, text){
+  return '<div style="display:flex; justify-content:'+(side==="me"?"flex-end":"flex-start")+'; margin-bottom:6px;">'
+    +'<div style="max-width:78%; padding:8px 12px; border-radius:14px; font-size:14px; line-height:1.6; '
+    +(side==="me"?"background:#2f4f3f; color:#dff0e0;":"background:#2a2a2a; color:#eee;")+'">'+text+"</div></div>";
+}
+function phoneDaily(){
+  var today=new Date().toDateString();
+  if(s.phoneDay!==today){
+    s.phoneDay=today;
+    var P=window.ROMANCE && ROMANCE.PHONE;
+    if(P) s.phonePostN=Math.min(P.posts.length, (s.phonePostN||3)+2);
+    save();
+  }
+}
+function openPhone(){
+  if(!window.ROMANCE || !ROMANCE.PHONE){ log("（手機沒訊號。）"); return; }
+  phoneDaily();
+  document.getElementById("phone-overlay").style.display="block";
+  renderPhoneWall();
+}
+function renderPhoneWall(){
+  var P=ROMANCE.PHONE, box=document.getElementById("phone-body"), today=new Date().toDateString();
+  box.innerHTML='<div style="color:#888; font-size:12px; margin-bottom:6px;">晴晴的動態牆（每天更新）</div>';
+  if(!s.phoneLikes) s.phoneLikes={};
+  var n=Math.min(P.posts.length, s.phonePostN||3);
+  for(var i=n-1;i>=0;i--){
+    var p=P.posts[i], liked=!!s.phoneLikes[i];
+    phAdd('<div style="border:1px solid #333; border-radius:12px; padding:10px 12px; margin-bottom:8px; background:#1c1c1c;">'
+      +'<div style="color:#f0b8d0; font-size:12px; margin-bottom:4px;">晴晴 Haru</div>'
+      +'<div style="color:#ddd; font-size:14px; line-height:1.7;">'+fmt(p.text)+'</div>'
+      +'<div style="margin-top:6px;"><button class="gbtn" data-like="'+i+'"'+(liked?" disabled":"")+'>'+(liked?"♥ 已讚":"♡ 讚")+'</button></div></div>');
+  }
+  box.scrollTop=0;
+  box.querySelectorAll("[data-like]").forEach(function(b){
+    b.onclick=function(){
+      var i=+b.getAttribute("data-like");
+      if(s.phoneLikes[i]) return;
+      s.phoneLikes[i]=1;
+      if(s.phoneLikeDay!==today){ s.phoneLikeDay=today; addFav("liang",1); log("你按了晴晴的貼文一個讚。她大概三秒後就會發現。（好感 +1）"); }
+      save(); renderPhoneWall();
+    };
+  });
+}
+function renderPhoneChat(){
+  var P=ROMANCE.PHONE, box=document.getElementById("phone-body"), r=relOf("liang");
+  var today=new Date().toDateString();
+  box.innerHTML='<div style="color:#888; font-size:12px; margin-bottom:6px;">與 晴晴 的聊天室</div>';
+  if(r.dating && P.goodnight){
+    if(s.phoneGN!==today){ s.phoneGN=today; s.phoneGNmsg=pickLine(P.goodnight); save(); }
+    if(s.phoneGNmsg) phAdd(phoneBubble("her", fmt(s.phoneGNmsg)));
+  }
+  if(!s.phoneThread) s.phoneThread={};
+  var th=null;
+  for(var i=0;i<P.threads.length;i++){
+    var t=P.threads[i];
+    if(!s.phoneThread[t.id] && r.fav>=t.need){ th=t; break; }
+  }
+  if(!th){ phAdd(phoneBubble("her", fmt(P.absent_line||"（拍攝中，晚點回你）"))); return; }
+  playPhoneThread(th, 0);
+}
+function playPhoneThread(th, idx){
+  var box=document.getElementById("phone-body");
+  while(idx<th.msgs.length){
+    var m=th.msgs[idx];
+    if(m.who==="choice"){
+      var cont=idx+1;
+      var row=document.createElement("div");
+      row.style.cssText="display:flex; flex-direction:column; gap:6px; margin:8px 0;";
+      m.opts.forEach(function(o){
+        var b=document.createElement("button"); b.className="gbtn"; b.textContent=o.label;
+        b.onclick=function(){
+          row.remove();
+          phAdd(phoneBubble("me", fmt(o.label)));
+          if(o.fav) addFav("liang", o.fav);
+          phAdd(phoneBubble("her", fmt(o.reply)));
+          playPhoneThread(th, cont);
+        };
+        row.appendChild(b);
+      });
+      box.appendChild(row);
+      box.scrollTop=box.scrollHeight;
+      return;
+    }
+    phAdd(phoneBubble(m.who==="liang"?"her":"me", fmt(m.text)));
+    idx++;
+  }
+  s.phoneThread[th.id]=true; save();
+  phAdd('<div style="color:#666; font-size:12px; text-align:center; margin:6px 0;">— 已讀 —</div>');
+}
+document.getElementById("btn-phone").addEventListener("click", openPhone);
+document.getElementById("phone-close").addEventListener("click", function(){ document.getElementById("phone-overlay").style.display="none"; render(); });
+document.getElementById("phone-overlay").addEventListener("click", function(e){ if(e.target===this){ this.style.display="none"; render(); } });
+document.getElementById("phone-tab-wall").addEventListener("click", renderPhoneWall);
+document.getElementById("phone-tab-chat").addEventListener("click", renderPhoneChat);
+
 function openBulletin(){
   var box=document.getElementById("bulletin-list");
   var B=(window.STORYDATA && STORYDATA.BULLETIN) || [];
@@ -1870,6 +2058,7 @@ document.getElementById("btn-reset").addEventListener("click", function(){
 
 /* ---------- boot ---------- */
 (function boot(){
+  document.getElementById("game-ver").textContent=GAME_VER;
   var d=load();
   if(d && d.name && d.introDone){
     s=d;
@@ -1895,6 +2084,8 @@ document.getElementById("btn-reset").addEventListener("click", function(){
     if(s.rel===undefined){ s.rel={}; s.eventsSeen={}; }
     if(s.epilogue===undefined){ s.epilogue={}; s.seasonalDone={}; }
     if(s.trials===undefined){ s.trials={}; s.villainDone={}; }
+    if(s.komiCare===undefined){ s.komiCare=0; s.phoneDay=""; s.phonePostN=0; s.phoneLikes={}; s.phoneLikeDay=""; s.phoneThread={}; s.phoneGN=""; s.phoneGNmsg=""; }
+    rollRoam();
     var before=s.sta;
     regen();
     render();
